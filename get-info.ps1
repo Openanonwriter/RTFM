@@ -237,8 +237,17 @@ if ($miniDumpCount -gt 0) {
 } else {
     Write-Host "Mini-Dumps found: 0"
 }
+# Get the CBS.log file
+$cbslog = Get-Content -Path "$env:windir\Logs\CBS\CBS.log"
+# Find the last line that contains the string "[SR]"
+$lastSfcLine = $cbslog | Select-String -Pattern "[SR]" | Select-Object -Last 1
+# Get the date and time from the last line
+$lastSfcDate = $lastSfcLine.Line.Substring(0, 19)
+# Write the date and time to the console
+Write-Host "The last time SFC was ran was $lastSfcDate."
 
-
+# Get the last time Dism.exe was run
+$lastRunTime = Get-WinEvent -LogName "System" -FilterHashtable @{ProviderName="Microsoft-Windows-DeploymentImageServicingManagement"; ID=100} | Select-Object -Last 1 -ExpandProperty TimeCreated
 
 
 # Windows Updates
