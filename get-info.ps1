@@ -11,6 +11,15 @@ $days = [math]::floor($uptime.TotalDays)
 $hours = $uptime.Hours
 Write-Output ("Uptime: {0} Days {1} Hours" -f $days, $hours)
 
+# Get the original install date
+$os = Get-WmiObject -Class Win32_OperatingSystem
+$installDate = $os.ConvertToDateTime($os.InstallDate)
+Write-Host "Original Install Date: $installDate"
+
+# Get the system boot time
+$bootTime = $os.ConvertToDateTime($os.LastBootUpTime)
+Write-Host "System Boot Time: $bootTime"
+
 Write-Host ""
 Write-Host "Motherboard" -ForegroundColor Magenta
 Get-WmiObject -Class Win32_BaseBoard | Format-Table Manufacturer, Product, SerialNumber, Version -Auto
