@@ -301,6 +301,78 @@ if ($RDPStatus.ReturnValue -eq 0) {
     Write-Host "Windows Remote Desktop: Disabled."
 }
 
+Write-Host "VPN Applications" -ForegroundColor Magenta
+
+# List of VPN apps to check
+$vpnNames = @(
+    "ExpressVPN",
+    "NordVPN",
+    "CyberGhost",
+    "IPVanish",
+    "Private Internet Access",
+    "Hotspot Shield",
+    "Windscribe",
+    "TunnelBear",
+    "VyprVPN",
+    "Surfshark",
+    "ProtonVPN",
+    "HideMyAss",
+    "TorGuard",
+    "Astrill",
+    "Mullvad",
+    "IVPN",
+    "PrivateVPN",
+    "PureVPN",
+    "SaferVPN",
+    "ZenMate",
+    "StrongVPN",
+    "AirVPN",
+    "CactusVPN",
+    "FastestVPN",
+    "FrootVPN",
+    "GooseVPN",
+    "Hide.me",
+    "iPredator",
+    "IronSocket",
+    "KeepSolid VPN Unlimited",
+    "LiquidVPN",
+    "Norton Secure VPN",
+    "Perfect Privacy",
+    "VPN.ht",
+    "VPNArea",
+    "VPNBook"
+    "WireGuard"
+)
+
+# Check if any VPN apps are installed, in the registry
+Write-Host "Checking for VPN programs found in registry..."
+$keyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
+$subKeys = Get-ChildItem -Path $keyPath
+
+foreach ($vpnName in $vpnNames) {
+    foreach ($subKey in $subKeys) {
+        $displayName = (Get-ItemProperty -Path "$keyPath\$($subKey.PSChildName)" -ErrorAction SilentlyContinue).DisplayName
+        if ($displayName -like "*$vpnName*") {
+            Write-Host "$vpnName is installed."
+            break
+        }
+    }
+}
+
+# Check if any VPN apps are installed, in the Program Files directories
+Write-Host "Checking for VPN Programs in Program Files..."
+$programFiles = [System.Environment]::GetFolderPath('ProgramFiles')
+$programFilesx86 = [System.Environment]::GetFolderPath('ProgramFilesX86')
+
+foreach ($vpnName in $vpnNames) {
+    if (Test-Path -Path "$programFiles\$vpnName") {
+        Write-Host "$vpnName found in Program Files"
+    }
+    if (Test-Path -Path "$programFilesx86\$vpnName") {
+        Write-Host "$vpnName found in Program Files (x86)"
+    }
+}
+
 
 
 
