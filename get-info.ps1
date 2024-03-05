@@ -1,4 +1,6 @@
 Write-Host "Welcome to RTFM's SYSTEM INFO" -ForegroundColor RED
+Write-Host "This script is intended for initial screening only, and does not provide definitive information. Please verify the results manually if you encounter any discrepancies." -ForegroundColor RED
+
 Write-Host "Widnows" -ForegroundColor Magenta
 $osname = (Get-WmiObject -class Win32_OperatingSystem).Caption
 $osversion = (Get-Item "HKLM:SOFTWARE\Microsoft\Windows NT\CurrentVersion").GetValue('DisplayVersion')
