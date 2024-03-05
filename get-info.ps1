@@ -208,7 +208,9 @@ foreach ($antivirusName in $antivirusNames) {
         if ($displayName -like "*$antivirusName*") {
             # Print the name and the registry path of the software
             # Use -ForegroundColor Blue to print the keys in blue
-            Write-Host "$antivirusName is installed at $($subKey.PSPath)." -ForegroundColor Blue
+            Write-Host "$antivirusName." -ForegroundColor Green -NoNewline
+			Write-Host " is installed at ." -NoNewline
+			Write-Host "$($subKey.PSPath)." -ForegroundColor Blue
             break
         }
     }
@@ -221,12 +223,15 @@ $programFilesx86 = [System.Environment]::GetFolderPath('ProgramFilesX86')
 
 foreach ($antivirusName in $antivirusNames) {
     if (Test-Path -Path "$programFiles\$antivirusName") {
-        Write-Host "$antivirusName found in Program Files" -ForegroundColor Blue
+        Write-Host "$antivirusName" -ForegroundColor Green -NoNewline
+		Write-Host " found in Program Files" 
     }
     if (Test-Path -Path "$programFilesx86\$antivirusName") {
-        Write-Host "$antivirusName found in Program Files (x86)" -ForegroundColor Blue
+        Write-Host "$antivirusName" -ForegroundColor Green -NoNewline
+		Write-Host " found in Program Files (x86)" 
     }
 }
+
 
 # Diagnostic data
 Write-Host "Diagnostic Data" -ForegroundColor Magenta
