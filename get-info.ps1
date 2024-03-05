@@ -246,10 +246,6 @@ $lastSfcDate = $lastSfcLine.Line.Substring(0, 19)
 # Write the date and time to the console
 Write-Host "The last time SFC was ran was $lastSfcDate."
 
-# Get the last time Dism.exe was run
-$lastRunTime = Get-WinEvent -LogName "System" -FilterHashtable @{ProviderName="Microsoft-Windows-DeploymentImageServicingManagement"; ID=100} | Select-Object -Last 1 -ExpandProperty TimeCreated
-
-
 # Windows Updates
 Write-Host "Windows Updates" -ForegroundColor Magenta
 # Create a session to interact with Windows Update
