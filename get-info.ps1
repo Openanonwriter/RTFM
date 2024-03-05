@@ -58,7 +58,31 @@ Write-Host "Number of RAM Slots Filled: $($numberOfSlots + 1)"
 $totalRAMSizeGB = ($ramInfo | Measure-Object -Property Capacity -Sum).Sum / 1GB
 Write-Host "Total RAM Size: $totalRAMSizeGB GB"
 
-wmic memorychip get banklabel, manufacturer, partnumber, speed, MemoryType, SMBIOSMemoryType, devicelocator
+# Create an empty array to store the output
+$memoryChipInfo = @()
+
+# Get WMI objects for memory chips
+$memoryChips = Get-WmiObject -Class Win32_PhysicalMemory
+
+# Loop through each memory chip
+foreach ($chip in $memoryChips) {
+    # Create a custom object for each chip with the properties you want
+    $chipInfo = New-Object PSObject -Property @{
+        BankLabel = $chip.BankLabel
+        Manufacturer = $chip.Manufacturer
+        PartNumber = $chip.PartNumber
+        Speed = $chip.Speed
+        MemoryType = $chip.MemoryType
+        SMBIOSMemoryType = $chip.SMBIOSMemoryType
+        DeviceLocator = $chip.DeviceLocator
+    }
+
+    # Add the custom object to the array
+    $memoryChipInfo += $chipInfo
+}
+
+# Output the array
+$memoryChipInfo | Format-Table
 
 Write-Host ""
 Write-Host "CPU" -ForegroundColor Magenta
