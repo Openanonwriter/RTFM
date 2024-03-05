@@ -324,6 +324,14 @@ if ($sshServerInstalled) {
 
 # Check if any remote desktop apps are installed, in the registry
 Write-Host "Checking for Remote Desktop programs found in registry..."
+
+# Registry keys to search
+$registryKeys = @(
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+    "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+)
+
+# List of remote desktop programs to check
 $remoteAccessPrograms = @(
     "TeamViewer",
     "AnyDesk",
@@ -356,18 +364,20 @@ $remoteAccessPrograms = @(
     "SysAid"
 )
 
-$keyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
-$subKeys = Get-ChildItem -Path $keyPath
-
-foreach ($programName in $remoteAccessPrograms) {
-    foreach ($subKey in $subKeys) {
-        $displayName = (Get-ItemProperty -Path "$keyPath\$($subKey.PSChildName)" -ErrorAction SilentlyContinue).DisplayName
-        if ($displayName -like "*$programName*") {
-            Write-Host "$programName is installed."
-            break
+foreach ($keyPath in $registryKeys) {
+    $subKeys = Get-ChildItem -Path $keyPath
+    foreach ($programName in $remoteAccessPrograms) {
+        foreach ($subKey in $subKeys) {
+            $displayName = (Get-ItemProperty -Path "$keyPath\$($subKey.PSChildName)" -ErrorAction SilentlyContinue).DisplayName
+            if ($displayName -like "*$programName*") {
+                Write-Host "$programName" -ForegroundColor Green -NoNewline
+                Write-Host " is installed. (Registry Location: $($subKey.PSPath))"
+                break
+            }
         }
     }
 }
+
 
 # Check if any remote desktop apps are installed, in the Program Files directories
 Write-Host "Checking for Remote Access Programs in Program Files..."
@@ -385,6 +395,12 @@ foreach ($programName in $remoteAccessPrograms) {
 }
 
 Write-Host "VPN Applications" -ForegroundColor Magenta
+
+# Registry keys to search
+$registryKeys = @(
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+    "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+)
 
 # List of VPN apps to check
 $vpnNames = @(
@@ -426,22 +442,20 @@ $vpnNames = @(
     "VPNBook"
     "WireGuard"
 )
-
-# Check if any VPN apps are installed, in the registry
-Write-Host "Checking for VPN programs found in registry..."
-$keyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
-$subKeys = Get-ChildItem -Path $keyPath
-
-foreach ($vpnName in $vpnNames) {
-    foreach ($subKey in $subKeys) {
-        $displayName = (Get-ItemProperty -Path "$keyPath\$($subKey.PSChildName)" -ErrorAction SilentlyContinue).DisplayName
-        if ($displayName -like "*$vpnName*") {
-            Write-Host "$vpnName is installed."
-            break
+# Check Registry Keys
+foreach ($keyPath in $registryKeys) {
+    $subKeys = Get-ChildItem -Path $keyPath
+    foreach ($vpnName in $vpnNames) {
+        foreach ($subKey in $subKeys) {
+            $displayName = (Get-ItemProperty -Path "$keyPath\$($subKey.PSChildName)" -ErrorAction SilentlyContinue).DisplayName
+            if ($displayName -like "*$vpnName*") {
+                Write-Host "$vpnName" -ForegroundColor Green -NoNewline
+                Write-Host " is installed. (Registry Location: $($subKey.PSPath))"
+                break
+            }
         }
     }
 }
-
 # Check if any VPN apps are installed, in the Program Files directories
 Write-Host "Checking for VPN Programs in Program Files..."
 $programFiles = [System.Environment]::GetFolderPath('ProgramFiles')
@@ -449,12 +463,17 @@ $programFilesx86 = [System.Environment]::GetFolderPath('ProgramFilesX86')
 
 foreach ($vpnName in $vpnNames) {
     if (Test-Path -Path "$programFiles\$vpnName") {
-        Write-Host "$vpnName found in Program Files"
+        Write-Host "$vpnName" -ForegroundColor Green -NoNewline
+		Write-Host " found in Program Files"
     }
     if (Test-Path -Path "$programFilesx86\$vpnName") {
-        Write-Host "$vpnName found in Program Files (x86)"
+        Write-Host "$vpnName"-ForegroundColor Green -NoNewline
+		Write-Host " found in Program Files (x86)"
     }
 }
+
+
+
 
 
 
