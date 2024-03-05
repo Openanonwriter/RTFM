@@ -49,11 +49,14 @@ switch ($ramType) {
     default { Write-Host "RAM Type: Unknown" }
 }
 
-if ($ramTypePrinted) {
-    Write-Host "Number of RAM slots: $numberOfSlots"
-}
+# Get information about physical memory
+$MemorySlots = Get-WmiObject Win32_PhysicalMemory | Where-Object { $_.Capacity -gt 0 }
+$PopulatedSlotCount = $MemorySlots.Count
 
-Write-Host "Number of RAM Slots Filled: $($numberOfSlots + 1)"
+# Display the result
+"Total populated DIMM slots: $PopulatedSlotCount"
+
+"Total DIMM SLOTS: $((Get-WmiObject -Class 'Win32_PhysicalMemoryArray').MemoryDevices)"
 
 $totalRAMSizeGB = ($ramInfo | Measure-Object -Property Capacity -Sum).Sum / 1GB
 Write-Host "Total RAM Size: $totalRAMSizeGB GB"
