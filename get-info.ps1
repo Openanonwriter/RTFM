@@ -13,12 +13,18 @@ Write-Output ("Uptime: {0} Days {1} Hours" -f $days, $hours)
 
 # Get the original install date
 $os = Get-WmiObject -Class Win32_OperatingSystem
-$installDate = $os.ConvertToDateTime($os.InstallDate)
-Write-Host "Original Install Date: $installDate"
+$installDate = $os.InstallDate.Substring(0,8)
+$installYear = $installDate.Substring(0,4)
+$installMonth = $installDate.Substring(4,2)
+$installDay = $installDate.Substring(6,2)
+Write-Host "Original Install Date: $installMonth/$installDay/$installYear"
 
 # Get the system boot time
-$bootTime = $os.ConvertToDateTime($os.LastBootUpTime)
-Write-Host "System Boot Time: $bootTime"
+$bootTime = $os.LastBootUpTime.Substring(0,8)
+$bootYear = $bootTime.Substring(0,4)
+$bootMonth = $bootTime.Substring(4,2)
+$bootDay = $bootTime.Substring(6,2)
+Write-Host "System Boot Time: $bootMonth/$bootDay/$bootYear"
 
 Write-Host ""
 Write-Host "Motherboard" -ForegroundColor Magenta
