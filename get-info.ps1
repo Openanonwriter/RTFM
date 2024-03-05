@@ -122,8 +122,10 @@ function Get-AntiVirusProduct {
 }
 Get-AntiVirusProduct | Out-String
 
-#AV's Installed in registry
-Write-Host "Checking Anti-Virus found in Registry..."
+#AV's Installed
+Write-Host "Antivirus Applications" -ForegroundColor Magenta
+
+# List of antivirus apps to check
 $antivirusNames = @(
     "Avast",
     "AVG",
@@ -155,64 +157,38 @@ $antivirusNames = @(
     "Webroot"
 )
 
-foreach ($antivirusName in $antivirusNames) {
-    $keyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
-    $subKeys = Get-ChildItem -Path $keyPath
+# Check if any antivirus apps are installed, in the registry
+Write-Host "Checking for Antivirus programs found in registry..."
+$keyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
+$subKeys = Get-ChildItem -Path $keyPath
 
+foreach ($antivirusName in $antivirusNames) {
     foreach ($subKey in $subKeys) {
         $displayName = (Get-ItemProperty -Path "$keyPath\$($subKey.PSChildName)" -ErrorAction SilentlyContinue).DisplayName
         if ($displayName -like "*$antivirusName*") {
-            Write-Host "$antivirusName is also installed."
+            Write-Host "$antivirusName is installed."
             break
         }
     }
 }
 
+# Check if any antivirus apps are installed, in the Program Files directories
 Write-Host "Checking for Antivirus Programs in Program Files..."
-
-$antivirusPrograms = @(
-    "Avast",
-    "AVG",
-    "Avira",
-    "Bitdefender",
-    "ZoneAlarm",
-    "Immunet",
-    "ClamWin",
-    "Comodo",
-    "Dr.Web",
-    "ESET",
-    "F-Secure",
-    "G DATA",
-    "Kaspersky",
-    "Malwarebytes",
-    "McAfee",
-    "Windows Defender",
-    "NANO",
-    "Norton",
-    "Spyware",
-    "Panda",
-    "360 Total Security",
-    "Sophos",
-    "Titanium",
-    "TrustPort",
-    "Vba32",
-    "Viper",
-    "Sentinel",
-    "Webroot"
-)
-
 $programFiles = [System.Environment]::GetFolderPath('ProgramFiles')
 $programFilesx86 = [System.Environment]::GetFolderPath('ProgramFilesX86')
 
-foreach ($programName in $antivirusPrograms) {
-    if (Test-Path -Path "$programFiles\$programName") {
-        Write-Host "$programName found in Program Files"
+foreach ($antivirusName in $antivirusNames) {
+    if (Test-Path -Path "$programFiles\$antivirusName") {
+        Write-Host "$antivirusName found in Program Files"
     }
-    if (Test-Path -Path "$programFilesx86\$programName") {
-        Write-Host "$programName found in Program Files (x86)"
+    if (Test-Path -Path "$programFilesx86\$antivirusName") {
+        Write-Host "$antivirusName found in Program Files (x86)"
     }
 }
 
+
+
+# Diagnostic data
 Write-Host "Diagnostic Data" -ForegroundColor Magenta
 $miniDumpPath = "C:\Windows\Minidump"
 $miniDumpCount = (Get-ChildItem -Path $miniDumpPath -File -ErrorAction SilentlyContinue).Count
@@ -223,6 +199,9 @@ if ($miniDumpCount -gt 0) {
 } else {
     Write-Host "Mini-Dumps found: 0"
 }
+
+
+
 
 # Windows Updates
 Write-Host "Windows Updates" -ForegroundColor Magenta
@@ -247,9 +226,13 @@ Write-Host "Important Count: $($important.Count)"
 Write-Host "Optional Count: $($optional.Count)"
 Write-Host "Total Updates: $totalUpdates"
 
+
+
+
 Write-Host "Remote Desktop Applications" -ForegroundColor Magenta
+
 # Check if any remote desktop apps are installed, in the registry
-Write-Host "Checking for Remotedesktop programs found in registry..."
+Write-Host "Checking for Remote Desktop programs found in registry..."
 $remoteAccessPrograms = @(
     "TeamViewer",
     "AnyDesk",
@@ -270,13 +253,22 @@ $remoteAccessPrograms = @(
     "Dameware Remote Everywhere",
     "Parallels Access",
     "RemotePC",
-    "Zoho Assist"
+    "Zoho Assist",
+    "Bomgar",
+    "Citrix GoToAssist",
+    "Cisco WebEx",
+    "Join.me",
+    "ScreenConnect",
+    "Apple Remote Desktop",
+    "Microsoft Intune",
+    "SolarWinds MSP Anywhere",
+    "SysAid"
 )
 
-foreach ($programName in $remoteAccessPrograms) {
-    $keyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
-    $subKeys = Get-ChildItem -Path $keyPath
+$keyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
+$subKeys = Get-ChildItem -Path $keyPath
 
+foreach ($programName in $remoteAccessPrograms) {
     foreach ($subKey in $subKeys) {
         $displayName = (Get-ItemProperty -Path "$keyPath\$($subKey.PSChildName)" -ErrorAction SilentlyContinue).DisplayName
         if ($displayName -like "*$programName*") {
@@ -286,30 +278,8 @@ foreach ($programName in $remoteAccessPrograms) {
     }
 }
 
+# Check if any remote desktop apps are installed, in the Program Files directories
 Write-Host "Checking for Remote Access Programs in Program Files..."
-
-$remoteAccessPrograms = @(
-    "TeamViewer",
-    "AnyDesk",
-    "Chrome Remote Desktop",
-    "Microsoft Remote Desktop",
-    "UltraVNC",
-    "RealVNC",
-    "LogMeIn",
-    "GoToMyPC",
-    "Zoho Assist",
-    "Splashtop",
-    "Remote Utilities",
-    "Ammyy Admin",
-    "ShowMyPC",
-    "Radmin",
-    "NoMachine",
-    "ConnectWise Control",
-    "Dameware Remote Everywhere",
-    "Parallels Access",
-    "RemotePC",
-    "Zoho Assist"
-)
 
 $programFiles = [System.Environment]::GetFolderPath('ProgramFiles')
 $programFilesx86 = [System.Environment]::GetFolderPath('ProgramFilesX86')
@@ -334,5 +304,5 @@ if ($RDPStatus.ReturnValue -eq 0) {
 
 
 
-Read-Host -Prompt "Press CTL ^ C to Exit"
+Read-Host -Prompt "Press CTL ^ C to Exit or Press enter and wait 2 min"
 Start-Sleep -Seconds 120
