@@ -231,14 +231,21 @@ foreach ($antivirusName in $antivirusNames) {
 # Diagnostic data
 Write-Host "Diagnostic Data" -ForegroundColor Magenta
 $miniDumpPath = "C:\Windows\Minidump"
-$miniDumpCount = (Get-ChildItem -Path $miniDumpPath -File -ErrorAction SilentlyContinue).Count
+$miniDumps = Get-ChildItem -Path $miniDumpPath -Filter "*.dmp" -File -ErrorAction SilentlyContinue
+
 # Mini Dumps
-if ($miniDumpCount -gt 0) {
+if ($miniDumps.Count -gt 0) {
     Write-Host "Mini-Dumps found: " -NoNewline 
-    Write-Host "$miniDumpCount" -ForegroundColor Red
+    Write-Host "$($miniDumps.Count)" -ForegroundColor Red
+
+    foreach ($dump in $miniDumps) {
+        Write-Host "File: $($dump.Name)"
+        Write-Host "Date: $($dump.LastWriteTime)"
+    }
 } else {
     Write-Host "Mini-Dumps found: 0"
 }
+
 # Get the CBS.log file
 $cbslog = Get-Content -Path "$env:windir\Logs\CBS\CBS.log"
 # Find the last line that contains the string "[SR]"
@@ -275,13 +282,23 @@ Write-Host "Total Updates: $totalUpdates"
 
 
 Write-Host "Remote Accesss" -ForegroundColor Magenta
-#WinRM
+# WinRM
 $winrmStatus = Get-WmiObject -Class Win32_Service -Filter "Name = 'winrm'"
 if ($winrmStatus.State -eq "Running") {
     Write-Host "WinRM: Enabled"
 } else {
     Write-Host "WinRM: Disabled"
 }
+
+# Windows Remote Desktop
+$TermServ = Get-WmiObject -Class "Win32_TerminalServiceSetting" -Namespace root\CIMv2\TerminalServices
+$RDPStatus = $TermServ.GetAllowTSConnections
+if ($RDPStatus.ReturnValue -eq 0) {
+    Write-Host "Windows Remote Desktop: Enabled."
+} else {
+    Write-Host "Windows Remote Desktop: Disabled."
+}
+
 # Check if any remote desktop apps are installed, in the registry
 Write-Host "Checking for Remote Desktop programs found in registry..."
 $remoteAccessPrograms = @(
@@ -342,14 +359,6 @@ foreach ($programName in $remoteAccessPrograms) {
     if (Test-Path -Path "$programFilesx86\$programName") {
         Write-Host "$programName found in Program Files (x86)"
     }
-}
-
-$TermServ = Get-WmiObject -Class "Win32_TerminalServiceSetting" -Namespace root\CIMv2\TerminalServices
-$RDPStatus = $TermServ.GetAllowTSConnections
-if ($RDPStatus.ReturnValue -eq 0) {
-    Write-Host "Windows Remote Desktop: Enabled."
-} else {
-    Write-Host "Windows Remote Desktop: Disabled."
 }
 
 Write-Host "VPN Applications" -ForegroundColor Magenta
