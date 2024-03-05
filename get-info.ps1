@@ -304,6 +304,24 @@ if ($RDPStatus.ReturnValue -eq 0) {
     Write-Host "Windows Remote Desktop: Disabled."
 }
 
+#Open-SSH
+# Check if OpenSSH Server is installed
+$sshServerInstalled = Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'
+
+if ($sshServerInstalled) {
+    Write-Host "OpenSSH Server is installed."
+    
+    # Check if OpenSSH SSH Server service is running
+    $sshServiceStatus = Get-Service -Name sshd -ErrorAction SilentlyContinue
+    if ($sshServiceStatus.Status -eq 'Running') {
+        Write-Host "OpenSSH SSH Server: RUNNING."
+    } else {
+        Write-Host "OpenSSH SSH Server: INSTALLED."
+    }
+} else {
+    Write-Host "OpenSSH Server: Not Intalled."
+}
+
 # Check if any remote desktop apps are installed, in the registry
 Write-Host "Checking for Remote Desktop programs found in registry..."
 $remoteAccessPrograms = @(
@@ -441,5 +459,5 @@ foreach ($vpnName in $vpnNames) {
 
 
 
-Read-Host -Prompt "Press CTL ^ C to Exit or Press enter and wait 2 min"
+Read-Host -Prompt "Press CTL ^ C to Exit"
 Start-Sleep -Seconds 120
