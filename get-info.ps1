@@ -11,6 +11,13 @@ $days = [math]::floor($uptime.TotalDays)
 $hours = $uptime.Hours
 Write-Output ("Uptime: {0} Days {1} Hours" -f $days, $hours)
 
+# Get the system boot time
+$bootTime = $os.LastBootUpTime.Substring(0,8)
+$bootYear = $bootTime.Substring(0,4)
+$bootMonth = $bootTime.Substring(4,2)
+$bootDay = $bootTime.Substring(6,2)
+Write-Host "System Boot Time: $bootMonth/$bootDay/$bootYear"
+
 # Get the original install date
 $os = Get-WmiObject -Class Win32_OperatingSystem
 $installDate = $os.InstallDate.Substring(0,8)
@@ -19,18 +26,9 @@ $installMonth = $installDate.Substring(4,2)
 $installDay = $installDate.Substring(6,2)
 Write-Host "Original Install Date: $installMonth/$installDay/$installYear"
 
-# Get the system boot time
-$bootTime = $os.LastBootUpTime.Substring(0,8)
-$bootYear = $bootTime.Substring(0,4)
-$bootMonth = $bootTime.Substring(4,2)
-$bootDay = $bootTime.Substring(6,2)
-Write-Host "System Boot Time: $bootMonth/$bootDay/$bootYear"
-
-Write-Host ""
 Write-Host "Motherboard" -ForegroundColor Magenta
 Get-WmiObject -Class Win32_BaseBoard | Format-Table Manufacturer, Product, SerialNumber, Version -Auto
 
-Write-Host ""
 Write-Host "RAM" -ForegroundColor Magenta
 $ramInfo = Get-WmiObject -Class Win32_PhysicalMemory
 $numberOfSlots = ($ramInfo | Select-Object -Property BankLabel | Get-Unique).Count
@@ -87,9 +85,9 @@ $memoryChipInfo | Format-Table
 Write-Host ""
 Write-Host "CPU" -ForegroundColor Magenta
 $cpuInfo = Get-WmiObject -Class Win32_Processor
+Write-Host "Name: $($cpuInfo.Name)"
 Write-Host "Socket: $($cpuInfo.SocketDesignation)"
 Write-Host "# of Sockets: $((Get-WmiObject -Class Win32_ComputerSystem).NumberOfProcessors)"
-Write-Host "Name: $($cpuInfo.Name)"
 Write-Host "# of Cores: $($cpuInfo.NumberOfCores)"
 Write-Host "# of Threads: $($cpuInfo.NumberOfLogicalProcessors)"
 Write-Host "Max Clock Speed: $($cpuInfo.MaxClockSpeed) Mhz"
@@ -100,17 +98,18 @@ Write-Host ""
 Write-Host "Network" -ForegroundColor Magenta
 $hostname = [System.Net.Dns]::GetHostName()
 Write-Host "Hostname: $hostname"
-$winrmStatus = Get-WmiObject -Class Win32_Service -Filter "Name = 'winrm'"
-if ($winrmStatus.State -eq "Running") {
-    Write-Host "WinRM: Enabled"
-} else {
-    Write-Host "WinRM: Disabled"
-}
+
 # External IP
 $externalIp = nslookup myip.opendns.com resolver1.opendns.com | findstr /R /C:"Address: .*" | select -last 1
 $externalIp = $externalIp -replace "Address: ",""
-Write-Host "External IP: " -NoNewline 
+Write-Host "External IP NSLOOKUP METHOD: " -NoNewline 
 Write-Host $externalIp -ForegroundColor YELLOW
+
+# External IP
+$externalIp = (Invoke-RestMethod -Uri 'https://ipinfo.io/json').ip
+Write-Host "External IP IPINFO: " -NoNewline 
+Write-Host $externalIp -ForegroundColor YELLOW
+
 
 $networkAdapters = Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter "IPEnabled = 'True'"
 
@@ -205,7 +204,9 @@ foreach ($antivirusName in $antivirusNames) {
     foreach ($subKey in $subKeys) {
         $displayName = (Get-ItemProperty -Path "$keyPath\$($subKey.PSChildName)" -ErrorAction SilentlyContinue).DisplayName
         if ($displayName -like "*$antivirusName*") {
-            Write-Host "$antivirusName is installed."
+            # Print the name and the registry path of the software
+            # Use -ForegroundColor Blue to print the keys in blue
+            Write-Host "$antivirusName is installed at $($subKey.PSPath)." -ForegroundColor Blue
             break
         }
     }
@@ -218,14 +219,12 @@ $programFilesx86 = [System.Environment]::GetFolderPath('ProgramFilesX86')
 
 foreach ($antivirusName in $antivirusNames) {
     if (Test-Path -Path "$programFiles\$antivirusName") {
-        Write-Host "$antivirusName found in Program Files"
+        Write-Host "$antivirusName found in Program Files" -ForegroundColor Blue
     }
     if (Test-Path -Path "$programFilesx86\$antivirusName") {
-        Write-Host "$antivirusName found in Program Files (x86)"
+        Write-Host "$antivirusName found in Program Files (x86)" -ForegroundColor Blue
     }
 }
-
-
 
 # Diagnostic data
 Write-Host "Diagnostic Data" -ForegroundColor Magenta
@@ -268,8 +267,14 @@ Write-Host "Total Updates: $totalUpdates"
 
 
 
-Write-Host "Remote Desktop Applications" -ForegroundColor Magenta
-
+Write-Host "Remote Accesss" -ForegroundColor Magenta
+#WinRM
+$winrmStatus = Get-WmiObject -Class Win32_Service -Filter "Name = 'winrm'"
+if ($winrmStatus.State -eq "Running") {
+    Write-Host "WinRM: Enabled"
+} else {
+    Write-Host "WinRM: Disabled"
+}
 # Check if any remote desktop apps are installed, in the registry
 Write-Host "Checking for Remote Desktop programs found in registry..."
 $remoteAccessPrograms = @(
