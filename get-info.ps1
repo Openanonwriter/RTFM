@@ -1,17 +1,36 @@
-Write-Host "Welcome to RTFM's SYSTEM INFO" -ForegroundColor RED
-Write-Host "This script is intended for initial screening only, and does not provide definitive information. Please verify the results manually if you encounter any discrepancies." -ForegroundColor RED
+#Writen By Anthony Widick
 
-Write-Host "Widnows" -ForegroundColor Magenta
+# Upgrade to admistrator
+if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    # Relaunch the script with elevated permissions
+    Start-Process -FilePath powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    exit
+}
+
+function Show-Menu {
+    param (
+        [string]$Title = 'My Menu'
+    )
+	clear-host
+	Write-Host "Welcome to RTFM's SYSTEM INFO" -ForegroundColor Blue
+Write-Host "This script is intended for initial screening only, and does not provide definitive information." -ForegroundColor Blue
+Write-Host "Please verify the results manually if you encounter any discrepancies." -ForegroundColor Blue
+
+Write-Host "Widnows Quick Info" -ForegroundColor Magenta
 $osname = (Get-WmiObject -class Win32_OperatingSystem).Caption
 $osversion = (Get-Item "HKLM:SOFTWARE\Microsoft\Windows NT\CurrentVersion").GetValue('DisplayVersion')
 Write-Host "$osname $osversion"
-#Uptime
+
+# Get system uptime 
 $os = Get-WmiObject -Class Win32_OperatingSystem
 $lastBootUpTime = [System.Management.ManagementDateTimeConverter]::ToDateTime($os.LastBootUpTime)
 $uptime = (Get-Date) - $lastBootUpTime
 $days = [math]::floor($uptime.TotalDays)
 $hours = $uptime.Hours
-Write-Output ("Uptime: {0} Days {1} Hours" -f $days, $hours)
+$minutes = $uptime.Minutes
+
+Write-Output ("Uptime: {0} Days {1} Hours {2} Minutes" -f $days, $hours, $minutes)
+
 
 # Get the system boot time
 $bootTime = $os.LastBootUpTime.Substring(0,8)
@@ -28,77 +47,127 @@ $installMonth = $installDate.Substring(4,2)
 $installDay = $installDate.Substring(6,2)
 Write-Host "Original Install Date: $installMonth/$installDay/$installYear"
 
-Write-Host "Motherboard" -ForegroundColor Magenta
-Get-WmiObject -Class Win32_BaseBoard | Format-Table Manufacturer, Product, SerialNumber, Version -Auto
+# Check if the Windows license type is Retail, OEM, or Volume
+function Get-WindowsActivationStatus {
+    $licenseInfo = Get-CimInstance -Query 'select * from SoftwareLicensingService'
+    $licenseType = $licenseInfo.OA3xOriginalProductKey
 
-Write-Host "RAM" -ForegroundColor Magenta
-$ramInfo = Get-WmiObject -Class Win32_PhysicalMemory
-$numberOfSlots = ($ramInfo | Select-Object -Property BankLabel | Get-Unique).Count
-$ramType = $ramInfo.SMBIOSMemoryType
-
-$ramTypePrinted = $false
-
-switch ($ramType) {
-    0 { if (-not $ramTypePrinted) { Write-Host "RAM Type: Unknown"; $ramTypePrinted = $true } }
-    1 { if (-not $ramTypePrinted) { Write-Host "RAM Type: Other"; $ramTypePrinted = $true } }
-    20 { if (-not $ramTypePrinted) { Write-Host "RAM Type: DDR"; $ramTypePrinted = $true } }
-    21 { if (-not $ramTypePrinted) { Write-Host "RAM Type: DDR2"; $ramTypePrinted = $true } }
-    22 { if (-not $ramTypePrinted) { Write-Host "RAM Type: DDR2 FB-DIMM"; $ramTypePrinted = $true } }
-    24 { if (-not $ramTypePrinted) { Write-Host "RAM Type: DDR3"; $ramTypePrinted = $true } }
-    26 { if (-not $ramTypePrinted) { Write-Host "RAM Type: DDR4"; $ramTypePrinted = $true } }
-    default { Write-Host "RAM Type: Unknown" }
-}
-
-# Get information about physical memory
-$MemorySlots = Get-WmiObject Win32_PhysicalMemory | Where-Object { $_.Capacity -gt 0 }
-$PopulatedSlotCount = $MemorySlots.Count
-
-# Display the result
-"Total populated DIMM slots: $PopulatedSlotCount"
-
-"Total DIMM SLOTS: $((Get-WmiObject -Class 'Win32_PhysicalMemoryArray').MemoryDevices)"
-
-$totalRAMSizeGB = ($ramInfo | Measure-Object -Property Capacity -Sum).Sum / 1GB
-Write-Host "Total RAM Size: $totalRAMSizeGB GB"
-
-# Create an empty array to store the output
-$memoryChipInfo = @()
-
-# Get WMI objects for memory chips
-$memoryChips = Get-WmiObject -Class Win32_PhysicalMemory
-
-# Loop through each memory chip
-foreach ($chip in $memoryChips) {
-    # Create a custom object for each chip with the properties you want
-    $chipInfo = New-Object PSObject -Property @{
-        BankLabel = $chip.BankLabel
-        Manufacturer = $chip.Manufacturer
-        PartNumber = $chip.PartNumber
-        Speed = $chip.Speed
-        MemoryType = $chip.MemoryType
-        SMBIOSMemoryType = $chip.SMBIOSMemoryType
-        DeviceLocator = $chip.DeviceLocator
+    if ($licenseType -match 'OEM') {
+        return 'Windows Key: OEM (Original Equipment Manufacturer)'
+    } elseif ($licenseType -match 'Retail') {
+        return 'Windows Key: Retail (Full Packaged Product)'
+    } elseif ($licenseType -match 'VL1') {
+        return 'Windows Key: Volume License (VL1)'
+    } elseif ($licenseType -match 'RTL') {
+        return 'Windows Key: Retail (FPP, Boxed Copy)'
+    } elseif ($licenseType -match 'STA') {
+        return 'Windows Key: Static Activation Key (No activation required)'
+    } else {
+        return 'Windows Key: Unknown (Possibly Volume or other)'
     }
-
-    # Add the custom object to the array
-    $memoryChipInfo += $chipInfo
 }
 
-# Output the array
-$memoryChipInfo | Format-Table
+# Get and display the Windows activation status
+$activationStatus = Get-WindowsActivationStatus
+if ($activationStatus -match 'Unknown' -or $activationStatus -match 'Not activated') {
+    Write-Host "Windows: " -nonewline
+	Write-Host "UNACTIVATED" -ForegroundColor Red
+} else {
+    Write-Host "Windows is activated: $activationStatus"
+}
 
 Write-Host ""
-Write-Host "CPU" -ForegroundColor Magenta
-$cpuInfo = Get-WmiObject -Class Win32_Processor
-Write-Host "Name: $($cpuInfo.Name)"
-Write-Host "Socket: $($cpuInfo.SocketDesignation)"
-Write-Host "# of Sockets: $((Get-WmiObject -Class Win32_ComputerSystem).NumberOfProcessors)"
-Write-Host "# of Cores: $($cpuInfo.NumberOfCores)"
-Write-Host "# of Threads: $($cpuInfo.NumberOfLogicalProcessors)"
-Write-Host "Max Clock Speed: $($cpuInfo.MaxClockSpeed) Mhz"
-Write-Host ""
+    Write-Host "================ $Title ================"
+    Write-Host "(Hardware) Info"
+    Write-Host "(Network) Info"
+    Write-Host "(App)s Info"
+    Write-Host "(Windows) Info"
+    Write-Host "(6)Install Anydesk, Malwarebytes, AdobeReader, Chrome"
+    Write-Host "(Repair) Windows"
+    Write-Host "(Q)uit"
+}
 
-#Network
+while ($true) {
+    Show-Menu -Title 'RTFM Main Menu'
+    $selection = Read-Host "Please make a selection"
+
+    switch ($selection) {
+        'Hardware' { 
+			Clear-Host
+			Write-Host "Motherboard" -ForegroundColor Magenta
+			Get-WmiObject -Class Win32_BaseBoard | Format-Table Manufacturer, Product, SerialNumber, Version -Auto
+			
+			Write-Host "RAM" -ForegroundColor Magenta
+			$ramInfo = Get-WmiObject -Class Win32_PhysicalMemory
+			$numberOfSlots = ($ramInfo | Select-Object -Property BankLabel | Get-Unique).Count
+			$ramType = $ramInfo.SMBIOSMemoryType
+			
+			$ramTypePrinted = $false
+			
+			switch ($ramType) {
+				0 { if (-not $ramTypePrinted) { Write-Host "RAM Type: Unknown"; $ramTypePrinted = $true } }
+				1 { if (-not $ramTypePrinted) { Write-Host "RAM Type: Other"; $ramTypePrinted = $true } }
+				20 { if (-not $ramTypePrinted) { Write-Host "RAM Type: DDR"; $ramTypePrinted = $true } }
+				21 { if (-not $ramTypePrinted) { Write-Host "RAM Type: DDR2"; $ramTypePrinted = $true } }
+				22 { if (-not $ramTypePrinted) { Write-Host "RAM Type: DDR2 FB-DIMM"; $ramTypePrinted = $true } }
+				24 { if (-not $ramTypePrinted) { Write-Host "RAM Type: DDR3"; $ramTypePrinted = $true } }
+				26 { if (-not $ramTypePrinted) { Write-Host "RAM Type: DDR4"; $ramTypePrinted = $true } }
+				default { Write-Host "RAM Type: Unknown" }
+			}
+			
+			# Get information about physical memory
+			$MemorySlots = Get-WmiObject Win32_PhysicalMemory | Where-Object { $_.Capacity -gt 0 }
+			$PopulatedSlotCount = $MemorySlots.Count
+			
+			# Display the result
+			"Total populated DIMM slots: $PopulatedSlotCount"
+			
+			"Total DIMM SLOTS: $((Get-WmiObject -Class 'Win32_PhysicalMemoryArray').MemoryDevices)"
+			
+			$totalRAMSizeGB = ($ramInfo | Measure-Object -Property Capacity -Sum).Sum / 1GB
+			Write-Host "Total RAM Size: $totalRAMSizeGB GB"
+			
+			# Create an empty array to store the output
+			$memoryChipInfo = @()
+			
+			# Get WMI objects for memory chips
+			$memoryChips = Get-WmiObject -Class Win32_PhysicalMemory
+			
+			# Loop through each memory chip
+			foreach ($chip in $memoryChips) {
+				# Create a custom object for each chip with the properties you want
+				$chipInfo = New-Object PSObject -Property @{
+					BankLabel = $chip.BankLabel
+					Manufacturer = $chip.Manufacturer
+					PartNumber = $chip.PartNumber
+					Speed = $chip.Speed
+					MemoryType = $chip.MemoryType
+					SMBIOSMemoryType = $chip.SMBIOSMemoryType
+					DeviceLocator = $chip.DeviceLocator
+				}
+			
+				# Add the custom object to the array
+				$memoryChipInfo += $chipInfo
+			}
+			
+			# Output the array
+			$memoryChipInfo | Format-Table
+			
+			Write-Host "CPU" -ForegroundColor Magenta
+			$cpuInfo = Get-WmiObject -Class Win32_Processor
+			Write-Host "Name: $($cpuInfo.Name)"
+			Write-Host "Socket: $($cpuInfo.SocketDesignation)"
+			Write-Host "# of Sockets: $((Get-WmiObject -Class Win32_ComputerSystem).NumberOfProcessors)"
+			Write-Host "# of Cores: $($cpuInfo.NumberOfCores)"
+			Write-Host "# of Threads: $($cpuInfo.NumberOfLogicalProcessors)"
+			Write-Host "Max Clock Speed: $($cpuInfo.MaxClockSpeed) Mhz"
+		
+            Write-Host ""
+            Write-Host "----------END----------"
+            Read-Host}
+      #Network      
+'Network' { 
+            Clear-Host
 Write-Host ""
 Write-Host "Network" -ForegroundColor Magenta
 $hostname = [System.Net.Dns]::GetHostName()
@@ -130,40 +199,201 @@ foreach ($adapter in $networkAdapters) {
     Write-Host "IPv6 Enabled: $($adapter.IPv6Enabled)"
     Write-Host
 }
-# Firewall 
-Write-Host "Firewall"-ForegroundColor Magenta
-Get-NetFirewallProfile | Format-Table Name, Enabled
 
-#Anti-Virus
-write-host "Active Anti-Virus"-ForegroundColor Magenta
-function Get-AntiVirusProduct {
-    [CmdletBinding()]
-    param (
-        [parameter(ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
-        [Alias('name')]
-        $computername = $env:computername
-    )
+Write-Host "Remote Accesss" -ForegroundColor Magenta
+# WinRM
+$winrmStatus = Get-WmiObject -Class Win32_Service -Filter "Name = 'winrm'"
+if ($winrmStatus.State -eq "Running") {
+    Write-Host "WinRM: Enabled"
+} else {
+    Write-Host "WinRM: Disabled"
+}
 
-    $AntiVirusProducts = Get-WmiObject -Namespace "root\SecurityCenter2" -Class AntiVirusProduct -ComputerName $computername
-    $ret = @()
+# Windows Remote Desktop
+$TermServ = Get-WmiObject -Class "Win32_TerminalServiceSetting" -Namespace root\CIMv2\TerminalServices
+$RDPStatus = $TermServ.GetAllowTSConnections
+if ($RDPStatus.ReturnValue -eq 0) {
+    Write-Host "Windows Remote Desktop: Enabled."
+} else {
+    Write-Host "Windows Remote Desktop: Disabled."
+}
 
-    foreach ($AntiVirusProduct in $AntiVirusProducts) {
-        # Switch to determine the status of antivirus definitions and real-time protection
-        # You can customize this part as needed
-        $status = if ($AntiVirusProduct.productupdaterequired) { "Out of date" } else { "Up to date" }
-        $realTimeProtection = if ($AntiVirusProduct.productupdaterequired) { "Disabled" } else { "Enabled" }
+#Open-SSH
+# Check if OpenSSH Server is installed
+$sshServerInstalled = Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'
 
-        $ret += @{
-            ComputerName = $computername
-            ProductName = $AntiVirusProduct.displayName
-            DefinitionStatus = $status
-            RealTimeProtection = $realTimeProtection
+if ($sshServerInstalled) {
+    # Check if OpenSSH SSH Server service is running
+    $sshServiceStatus = Get-Service -Name sshd -ErrorAction SilentlyContinue
+    if ($sshServiceStatus.Status -eq 'Running') {
+        Write-Host "OpenSSH SSH Server: RUNNING."
+    } else {
+        Write-Host "OpenSSH SSH Server: INSTALLED."
+    }
+} else {
+    Write-Host "OpenSSH Server: Not Intalled."
+}
+Write-Host ""
+Write-Host "----------END----------"
+Read-Host
+
+         }
+        'App' { 
+
+
+Clear-Host
+#Check if any remote desktop apps are installed, in the registry
+Write-Host "Checking for Remote Desktop programs found in registry..."
+
+# Registry keys to search
+$registryKeys = @(
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+    "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+)
+
+# List of remote desktop programs to check
+$remoteAccessPrograms = @(
+    "TeamViewer",
+    "AnyDesk",
+    "Chrome Remote Desktop",
+    "Microsoft Remote Desktop",
+    "UltraVNC",
+    "RealVNC",
+    "LogMeIn",
+    "GoToMyPC",
+    "Zoho Assist",
+    "Splashtop",
+    "Remote Utilities",
+    "Ammyy Admin",
+    "ShowMyPC",
+    "Radmin",
+    "NoMachine",
+    "ConnectWise Control",
+    "Dameware Remote Everywhere",
+    "Parallels Access",
+    "RemotePC",
+    "Zoho Assist",
+    "Bomgar",
+    "Citrix GoToAssist",
+    "Cisco WebEx",
+    "Join.me",
+    "ScreenConnect",
+    "Apple Remote Desktop",
+    "Microsoft Intune",
+    "SolarWinds MSP Anywhere",
+    "SysAid"
+)
+
+foreach ($keyPath in $registryKeys) {
+    $subKeys = Get-ChildItem -Path $keyPath
+    foreach ($programName in $remoteAccessPrograms) {
+        foreach ($subKey in $subKeys) {
+            $displayName = (Get-ItemProperty -Path "$keyPath\$($subKey.PSChildName)" -ErrorAction SilentlyContinue).DisplayName
+            if ($displayName -like "*$programName*") {
+                Write-Host "$programName" -ForegroundColor Green -NoNewline
+                Write-Host " is installed. (Registry Location: $($subKey.PSPath))"
+                break
+            }
         }
     }
-
-    $ret
 }
-Get-AntiVirusProduct | Out-String
+
+
+# Check if any remote desktop apps are installed, in the Program Files directories
+Write-Host "Checking for Remote Access Programs in Program Files..."
+
+$programFiles = [System.Environment]::GetFolderPath('ProgramFiles')
+$programFilesx86 = [System.Environment]::GetFolderPath('ProgramFilesX86')
+
+foreach ($programName in $remoteAccessPrograms) {
+    if (Test-Path -Path "$programFiles\$programName") {
+        Write-Host "$programName" -NoNewline -ForegroundColor Green
+        Write-Host " found in Program Files"
+    }
+    if (Test-Path -Path "$programFilesx86\$programName") {
+        Write-Host "$programName" -NoNewline -ForegroundColor Green
+        Write-Host " found in Program Files (x86)"
+    }
+}
+
+Write-Host "VPN Applications" -ForegroundColor Magenta
+
+# Registry keys to search
+$registryKeys = @(
+    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+    "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
+)
+
+# List of VPN apps to check
+$vpnNames = @(
+    "ExpressVPN",
+    "NordVPN",
+    "CyberGhost",
+    "IPVanish",
+    "Private Internet Access",
+    "Hotspot Shield",
+    "Windscribe",
+    "TunnelBear",
+    "VyprVPN",
+    "Surfshark",
+    "ProtonVPN",
+    "HideMyAss",
+    "TorGuard",
+    "Astrill",
+    "Mullvad",
+    "IVPN",
+    "PrivateVPN",
+    "PureVPN",
+    "SaferVPN",
+    "ZenMate",
+    "StrongVPN",
+    "AirVPN",
+    "CactusVPN",
+    "FastestVPN",
+    "FrootVPN",
+    "GooseVPN",
+    "Hide.me",
+    "iPredator",
+    "IronSocket",
+    "KeepSolid VPN Unlimited",
+    "LiquidVPN",
+    "Norton Secure VPN",
+    "Perfect Privacy",
+    "VPN.ht",
+    "VPNArea",
+    "VPNBook"
+    "WireGuard"
+    "FortiClient VPN"
+)
+# Check Registry Keys
+foreach ($keyPath in $registryKeys) {
+    $subKeys = Get-ChildItem -Path $keyPath
+    foreach ($vpnName in $vpnNames) {
+        foreach ($subKey in $subKeys) {
+            $displayName = (Get-ItemProperty -Path "$keyPath\$($subKey.PSChildName)" -ErrorAction SilentlyContinue).DisplayName
+            if ($displayName -like "*$vpnName*") {
+                Write-Host "$vpnName" -ForegroundColor Green -NoNewline
+                Write-Host " is installed. (Registry Location: $($subKey.PSPath))"
+                break
+            }
+        }
+    }
+}
+# Check if any VPN apps are installed, in the Program Files directories
+Write-Host "Checking for VPN Programs in Program Files..."
+$programFiles = [System.Environment]::GetFolderPath('ProgramFiles')
+$programFilesx86 = [System.Environment]::GetFolderPath('ProgramFilesX86')
+
+foreach ($vpnName in $vpnNames) {
+    if (Test-Path -Path "$programFiles\$vpnName") {
+        Write-Host "$vpnName" -ForegroundColor Green -NoNewline
+		Write-Host " found in Program Files"
+    }
+    if (Test-Path -Path "$programFilesx86\$vpnName") {
+        Write-Host "$vpnName"-ForegroundColor Green -NoNewline
+		Write-Host " found in Program Files (x86)"
+    }
+}
 
 #AV's Installed
 Write-Host "Antivirus Applications" -ForegroundColor Magenta
@@ -234,7 +464,100 @@ foreach ($antivirusName in $antivirusNames) {
 		Write-Host " found in Program Files (x86)" 
     }
 }
+Write-Host ""
+Write-Host "----------END----------"
+Read-Host
 
+         }
+        '4' { Write-Host "AV" }
+        '5' { Write-Host "You chose Option 5" }
+        '6' { 
+
+            # Check if an application is installed
+            function Is-AppInstalled($appId) {
+            $installedApps = winget list
+            return $installedApps -match $appId
+            }
+
+# Install or update an application
+        function InstallOrUpdate-App($appId) {
+            if (Is-AppInstalled $appId) {
+                Write-Host "Updating $appId..."
+                winget upgrade --id $appId
+            } else {
+                Write-Host "Installing $appId..."
+                winget install --exact --id $appId
+            }
+        }
+
+            # Check and install/update applications
+            InstallOrUpdate-App "Malwarebytes.Malwarebytes"
+            InstallOrUpdate-App "Adobe.Acrobat.Reader.64-bit"
+            InstallOrUpdate-App "Google.Chrome"
+            InstallOrUpdate-App "AnyDeskSoftwareGmbH.AnyDesk"
+            Read-Host
+# End of Menu 6
+}
+        'repair' {
+            Clear-Host
+# Powershell script to run sfc first, then run dism if sfc shows "Windows Resource Protection found corrupt files and successfully repaired them.", then sfc a second time.
+
+# Run sfc first and capture output
+Write-Host "Running sfc.exe..."
+$sfcOutput = sfc.exe /scannow 2>&1 | ForEach-Object { Write-Host $_; $_ } | Tee-Object -Variable sfcResults
+
+# Check if sfc reported successful repair
+if ($sfcOutput -match "Windows Resource Protection found corrupt files and successfully repaired them.") {
+    Write-Host "SFC detected and repaired corrupt files. Running DISM..."
+
+    # Run DISM
+    dism.exe /online /cleanup-image /restorehealth 2>&1 | ForEach-Object { Write-Host $_; $_ } | Tee-Object -Variable dismResults
+
+    Write-Host "DISM completed. Running sfc again..."
+
+    # Run sfc again
+    sfc.exe /scannow 2>&1 | ForEach-Object { Write-Host $_; $_ } | Tee-Object -Variable sfcResults
+}
+
+Write-Host "DISM and SFC completed" -ForegroundColor Magenta
+
+Write-Host ""
+Write-Host "----------END----------"
+Read-Hostt}
+
+ 'Windows'{
+Clear-Host
+
+#Anti-Virus
+write-host "Active Anti-Virus"-ForegroundColor Magenta
+function Get-AntiVirusProduct {
+    [CmdletBinding()]
+    param (
+        [parameter(ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+        [Alias('name')]
+        $computername = $env:computername
+    )
+
+    $AntiVirusProducts = Get-WmiObject -Namespace "root\SecurityCenter2" -Class AntiVirusProduct -ComputerName $computername
+    $ret = @()
+
+    foreach ($AntiVirusProduct in $AntiVirusProducts) {
+        # Switch to determine the status of antivirus definitions and real-time protection
+        # You can customize this part as needed
+        $status = if ($AntiVirusProduct.productupdaterequired) { "Out of date" } else { "Up to date" }
+        $realTimeProtection = if ($AntiVirusProduct.productupdaterequired) { "Disabled" } else { "Enabled" }
+
+        $ret += @{
+            ComputerName = $computername
+            ProductName = $AntiVirusProduct.displayName
+            DefinitionStatus = $status
+            RealTimeProtection = $realTimeProtection
+        }
+    }
+
+    $ret
+}
+Get-AntiVirusProduct | Out-String
 
 # Diagnostic data
 Write-Host "Diagnostic Data" -ForegroundColor Magenta
@@ -285,201 +608,13 @@ Write-Host "Critical Count: $($critical.Count)"
 Write-Host "Important Count: $($important.Count)"
 Write-Host "Optional Count: $($optional.Count)"
 Write-Host "Total Updates: $totalUpdates"
-
-
-
-
-Write-Host "Remote Accesss" -ForegroundColor Magenta
-# WinRM
-$winrmStatus = Get-WmiObject -Class Win32_Service -Filter "Name = 'winrm'"
-if ($winrmStatus.State -eq "Running") {
-    Write-Host "WinRM: Enabled"
-} else {
-    Write-Host "WinRM: Disabled"
-}
-
-# Windows Remote Desktop
-$TermServ = Get-WmiObject -Class "Win32_TerminalServiceSetting" -Namespace root\CIMv2\TerminalServices
-$RDPStatus = $TermServ.GetAllowTSConnections
-if ($RDPStatus.ReturnValue -eq 0) {
-    Write-Host "Windows Remote Desktop: Enabled."
-} else {
-    Write-Host "Windows Remote Desktop: Disabled."
-}
-
-#Open-SSH
-# Check if OpenSSH Server is installed
-$sshServerInstalled = Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'
-
-if ($sshServerInstalled) {
-    Write-Host "OpenSSH Server is installed."
-    
-    # Check if OpenSSH SSH Server service is running
-    $sshServiceStatus = Get-Service -Name sshd -ErrorAction SilentlyContinue
-    if ($sshServiceStatus.Status -eq 'Running') {
-        Write-Host "OpenSSH SSH Server: RUNNING."
-    } else {
-        Write-Host "OpenSSH SSH Server: INSTALLED."
-    }
-} else {
-    Write-Host "OpenSSH Server: Not Intalled."
-}
-
-# Check if any remote desktop apps are installed, in the registry
-Write-Host "Checking for Remote Desktop programs found in registry..."
-
-# Registry keys to search
-$registryKeys = @(
-    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-    "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
-)
-
-# List of remote desktop programs to check
-$remoteAccessPrograms = @(
-    "TeamViewer",
-    "AnyDesk",
-    "Chrome Remote Desktop",
-    "Microsoft Remote Desktop",
-    "UltraVNC",
-    "RealVNC",
-    "LogMeIn",
-    "GoToMyPC",
-    "Zoho Assist",
-    "Splashtop",
-    "Remote Utilities",
-    "Ammyy Admin",
-    "ShowMyPC",
-    "Radmin",
-    "NoMachine",
-    "ConnectWise Control",
-    "Dameware Remote Everywhere",
-    "Parallels Access",
-    "RemotePC",
-    "Zoho Assist",
-    "Bomgar",
-    "Citrix GoToAssist",
-    "Cisco WebEx",
-    "Join.me",
-    "ScreenConnect",
-    "Apple Remote Desktop",
-    "Microsoft Intune",
-    "SolarWinds MSP Anywhere",
-    "SysAid"
-)
-
-foreach ($keyPath in $registryKeys) {
-    $subKeys = Get-ChildItem -Path $keyPath
-    foreach ($programName in $remoteAccessPrograms) {
-        foreach ($subKey in $subKeys) {
-            $displayName = (Get-ItemProperty -Path "$keyPath\$($subKey.PSChildName)" -ErrorAction SilentlyContinue).DisplayName
-            if ($displayName -like "*$programName*") {
-                Write-Host "$programName" -ForegroundColor Green -NoNewline
-                Write-Host " is installed. (Registry Location: $($subKey.PSPath))"
-                break
-            }
-        }
+ 
+Write-Host ""
+Write-Host "----------END----------"
+Read-Host}
+#End of Top Menu
+        'ALL' { Write-Host "ALL" }
+        'q' { exit }
+        default { Write-Host "Invalid selection. Please choose again." }
     }
 }
-
-
-# Check if any remote desktop apps are installed, in the Program Files directories
-Write-Host "Checking for Remote Access Programs in Program Files..."
-
-$programFiles = [System.Environment]::GetFolderPath('ProgramFiles')
-$programFilesx86 = [System.Environment]::GetFolderPath('ProgramFilesX86')
-
-foreach ($programName in $remoteAccessPrograms) {
-    if (Test-Path -Path "$programFiles\$programName") {
-        Write-Host "$programName found in Program Files"
-    }
-    if (Test-Path -Path "$programFilesx86\$programName") {
-        Write-Host "$programName found in Program Files (x86)"
-    }
-}
-
-Write-Host "VPN Applications" -ForegroundColor Magenta
-
-# Registry keys to search
-$registryKeys = @(
-    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
-    "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall"
-)
-
-# List of VPN apps to check
-$vpnNames = @(
-    "ExpressVPN",
-    "NordVPN",
-    "CyberGhost",
-    "IPVanish",
-    "Private Internet Access",
-    "Hotspot Shield",
-    "Windscribe",
-    "TunnelBear",
-    "VyprVPN",
-    "Surfshark",
-    "ProtonVPN",
-    "HideMyAss",
-    "TorGuard",
-    "Astrill",
-    "Mullvad",
-    "IVPN",
-    "PrivateVPN",
-    "PureVPN",
-    "SaferVPN",
-    "ZenMate",
-    "StrongVPN",
-    "AirVPN",
-    "CactusVPN",
-    "FastestVPN",
-    "FrootVPN",
-    "GooseVPN",
-    "Hide.me",
-    "iPredator",
-    "IronSocket",
-    "KeepSolid VPN Unlimited",
-    "LiquidVPN",
-    "Norton Secure VPN",
-    "Perfect Privacy",
-    "VPN.ht",
-    "VPNArea",
-    "VPNBook"
-    "WireGuard"
-)
-# Check Registry Keys
-foreach ($keyPath in $registryKeys) {
-    $subKeys = Get-ChildItem -Path $keyPath
-    foreach ($vpnName in $vpnNames) {
-        foreach ($subKey in $subKeys) {
-            $displayName = (Get-ItemProperty -Path "$keyPath\$($subKey.PSChildName)" -ErrorAction SilentlyContinue).DisplayName
-            if ($displayName -like "*$vpnName*") {
-                Write-Host "$vpnName" -ForegroundColor Green -NoNewline
-                Write-Host " is installed. (Registry Location: $($subKey.PSPath))"
-                break
-            }
-        }
-    }
-}
-# Check if any VPN apps are installed, in the Program Files directories
-Write-Host "Checking for VPN Programs in Program Files..."
-$programFiles = [System.Environment]::GetFolderPath('ProgramFiles')
-$programFilesx86 = [System.Environment]::GetFolderPath('ProgramFilesX86')
-
-foreach ($vpnName in $vpnNames) {
-    if (Test-Path -Path "$programFiles\$vpnName") {
-        Write-Host "$vpnName" -ForegroundColor Green -NoNewline
-		Write-Host " found in Program Files"
-    }
-    if (Test-Path -Path "$programFilesx86\$vpnName") {
-        Write-Host "$vpnName"-ForegroundColor Green -NoNewline
-		Write-Host " found in Program Files (x86)"
-    }
-}
-
-
-
-
-
-
-
-Read-Host -Prompt "Press CTL ^ C to Exit"
-Start-Sleep -Seconds 120
