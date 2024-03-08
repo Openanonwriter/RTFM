@@ -612,6 +612,13 @@ Write-Host ""
 Write-Host "----------END----------"
 Read-Host}
 #End of Top Menu
+        'iperf' {
+                # Prompt the user for IPerf3 arguments
+                $iperfArgs = Read-Host "Enter IPerf3 Args"
+
+                # Run IPerf3 with the provided arguments
+                Start-Process -FilePath .\iperf3.exe -ArgumentList $iperfArgs
+        Read-Host}
         'ALL' { Write-Host "ALL" }
         'q' { exit }
         default { Write-Host "Invalid selection. Please choose again." }
