@@ -1,19 +1,30 @@
-Clear-Host
+# Get the directory to search
+$directory = ".\Tools\Networking\nmap*"
 
-# Find iperf3.exe in any subdirectory of the current directory
-$iperfPath = Get-ChildItem -Path .\ -Filter iperf3.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+# Get all PowerShell scripts in the directory
+$scripts = Get-ChildItem -Path $directory -Filter *.ps1 -Recurse
 
-if ($null -ne $iperfPath) {
-    Write-Host "iperf3 found at $iperfPath"
-    Write-Host "This will run with -s applied"
-
-    $iperfport = Read-Host "Enter A Port Number"
-    $iperfArgs = Read-Host "Enter Additional Arguments if you want"
-
-    Write-Host "Starting iperf3 from $iperfPath"
-    Start-Process -FilePath $iperfPath -ArgumentList "-s -p $iperfport $iperfArgs"
-} else {
-    Write-Host "iperf3.exe not found in any subdirectory of the Tools directory."
+# Check if any scripts were found
+if ($scripts.Count -eq 0) {
+    Write-Host "No PowerShell scripts found in the directory."
+    Read-Host
+    return
 }
 
-Read-Host
+# Display the scripts in a table
+$scripts | Format-Table -Property Name
+
+# Get the script to execute
+$scriptName = Read-Host "Enter the name of the PS script to execute"
+
+# Check if the script exists
+$script = $scripts | Where-Object { $_.Name -eq $scriptName }
+if ($null -eq $script) {
+    Clear-Host
+    Write-Host "The script '$scriptName' was not found in the directory."
+    Read-Host
+    return
+}
+
+# Execute the script
+& $script.FullName
