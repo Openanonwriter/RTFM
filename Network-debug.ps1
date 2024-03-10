@@ -6,7 +6,7 @@ function Show-MainMenu {
         Write-Host "(nmap) Check ports and hosts on network"
         Write-Host "(TNC)Test-NetConnection"
         Write-Host "(Ping)"
-        Write-Host "(Tracert) Trace Route"
+        Write-Host "(Trace)Trace Route"
 
         $choice = Read-Host "Enter your choice"
 
@@ -59,7 +59,7 @@ function iperf3-submenu {
             }
         'args' {                 
             Clear-Host
-$x = @"
+$iperfHelp = @"
 Usage: iperf [-s|-c host] [options]
        iperf [-h|--help] [-v|--version]
 
@@ -108,7 +108,7 @@ Client specific:
 
 [KMG] indicates options that support a K/M/G suffix for kilo-, mega-, or giga-
 "@
-Write-Host $x
+Write-Host $iperfHelp 
             $iperfArgs = Read-Host "Enter Args"
             Start-Process $iperfPath -ArgumentList "$iperfArgs"
             Read-Host 
