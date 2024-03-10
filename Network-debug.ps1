@@ -19,7 +19,6 @@ function Show-MainMenu {
     }
 }
 
-
 function Show-SubMenu {
     while ($true) {
         Write-Host "=== Submenu ==="
