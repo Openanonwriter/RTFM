@@ -157,6 +157,43 @@ if ($null -eq $script) {
         }
     }
 }
+function Test-NetConnection-submenu {
+    while ($true) {
+        
+        $iperfPath = Get-ChildItem -Path .\ -Filter iperf3.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+        if ($null -ne $iperfPath) {
+        
+        Clear-Host
+        Write-Host "=== Test-NetConnection ==="
+        Write-Host "Custom (Args)"
+        Write-Host "(Q) Back to Main Menu"
+    } else {
+        Write-Host "iperf3.exe not found in any subdirectory of the Tools directory." -ForegroundColor Red
+        Read-Host
+        Show-MainMenu
+    }
+        $subChoice = Read-Host "Enter your subchoice"
+
+        switch ($subChoice) {
+            'c' { 
+                Clear-Host
+                Read-Host
+             }
+            's' { 
+                Clear-Host
+                Read-Host
+            }
+        'args' {                 
+            Clear-Host
+
+            Read-Host 
+        }
+        'q' { Show-MainMenu }
+        default { Write-Host "Invalid selection. Please choose again." 
+                Read-Host}
+        } 
+    }
+}
 
 
 Show-MainMenu
