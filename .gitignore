@@ -843,3 +843,4 @@ Test/CERTIFICATE
 Test/Test.exe
 Test/.rsrc/version.txt
 Test/.rsrc/MANIFEST/1
+Network-debug.ps1
