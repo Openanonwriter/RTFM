@@ -59,7 +59,7 @@ $installDay = $installDate.Substring(6,2)
 Write-Host "Original Install Date: $installMonth/$installDay/$installYear"
 
 # Get and display the Windows activation status
-$WinVerAct = (cscript /Nologo "C:\Windows\System32\slmgr.vbs" /dli) -join ''
+$WinVerAct = (cscript /Nologo "C:\Windows\System32\slmgr.vbs" /dlv) -join ''
 $activationStatus = if ($WinVerAct -match 'Licensed') {
     'Licensed'
 } elseif ($WinVerAct -match 'Out-of-Box') {
@@ -78,22 +78,38 @@ $activationStatus = if ($WinVerAct -match 'Licensed') {
     'Unknown'
 }
 
-$licenseType = if ($WinVerAct -match 'Partial Product Key: .*STA.*') {
-    'Static Activation Key (STA)'
-} elseif ($WinVerAct -match 'Partial Product Key: .*OEM.*') {
-    'OEM (Original Equipment Manufacturer)'
-} elseif ($WinVerAct -match 'Partial Product Key: .*Retail.*') {
-    'Retail (FPP, Boxed Copy)'
-} elseif ($WinVerAct -match 'Partial Product Key: .*VL1.*') {
-    'Volume License (VL1)'
-} elseif ($WinVerAct -match 'Partial Product Key: .*FPP.*') {
-    'Retail (Full Packaged Product)'
-} else {
-    'Unknown (Possibly Volume or other)'
+# Initialize the license type
+$licenseType = "Unknown"
+
+# Check for different product key channels
+if ($WinVerAct -match 'Product Key Channel: STA') {
+    $licenseType = 'Static Activation Key (STA)'
+} elseif ($WinVerAct -match 'Product Key Channel: OEM') {
+    $licenseType = 'OEM (Original Equipment Manufacturer)'
+} elseif ($WinVerAct -match 'Product Key Channel: Retail') {
+    $licenseType = 'Retail (FPP, Boxed Copy)'
+} elseif ($WinVerAct -match 'Product Key Channel: VL1') {
+    $licenseType = 'Volume License (VL1)'
+} elseif ($WinVerAct -match 'Product Key Channel: FPP') {
+    $licenseType = 'Retail (Full Packaged Product)'
 }
 
-Write-Host "Windows activation status: $activationStatus"
+#Write-Host "Windows activation status: $activationStatus"
+
+if ($activationStatus -eq "Licensed") {
+    Write-Host "Windows activation status: " -NoNewline
+    Write-Host "$activationStatus" -ForegroundColor Green
+}
+else {
+    Write-Host "Windows activation status: " -NoNewline
+    Write-Host "$activationStatus"-ForegroundColor Red
+}
+
+
+
 Write-Host "Windows key type: $licenseType"
+
+
 
 # Check if the Windows license type is Retail, OEM, or Volume
 $registryPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SoftwareProtectionPlatform"
