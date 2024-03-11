@@ -11,9 +11,20 @@ function Show-Menu {
         [string]$Title = 'My Menu'
     )
 	clear-host
-	Write-Host "Welcome to RTFM's SYSTEM INFO" -ForegroundColor Blue
-Write-Host "This script is intended for initial screening only, and does not provide definitive information." -ForegroundColor Blue
-Write-Host "Please verify the results manually if you encounter any discrepancies." -ForegroundColor Blue
+
+function Write-HostCenter-Magenta {
+    param($Message)
+    Write-Host ("{0}{1}" -f (' ' * (([Math]::Max(0, $Host.UI.RawUI.BufferSize.Width / 2) - [Math]::Floor($Message.Length / 2)))), $Message) -ForegroundColor Magenta
+}
+function Write-HostCenter {
+    param($Message)
+    Write-Host ("{0}{1}" -f (' ' * (([Math]::Max(0, $Host.UI.RawUI.BufferSize.Width / 2) - [Math]::Floor($Message.Length / 2)))), $Message) 
+}
+
+Write-HostCenter-Magenta "Welcome to RTFM's SYSTEM INFO" 
+Write-HostCenter-Magenta "=============================" 
+Write-HostCenter "This script is intended for initial screening only, and does not provide definitive information."
+Write-HostCenter "Please verify the results manually if you encounter any discrepancies."
 
 Write-Host "Widnows Quick Info" -ForegroundColor Magenta
 $osname = (Get-WmiObject -class Win32_OperatingSystem).Caption
@@ -31,11 +42,12 @@ $minutes = $uptime.Minutes
 Write-Output ("Uptime: {0} Days {1} Hours {2} Minutes" -f $days, $hours, $minutes)
 
 
-# Get the system boot time
+# Get the system boot Date
 $bootTime = $os.LastBootUpTime.Substring(0,8)
 $bootYear = $bootTime.Substring(0,4)
 $bootMonth = $bootTime.Substring(4,2)
 $bootDay = $bootTime.Substring(6,2)
+
 Write-Host "System Boot Time: $bootMonth/$bootDay/$bootYear"
 
 # Get the original install date
@@ -46,33 +58,66 @@ $installMonth = $installDate.Substring(4,2)
 $installDay = $installDate.Substring(6,2)
 Write-Host "Original Install Date: $installMonth/$installDay/$installYear"
 
-# Check if the Windows license type is Retail, OEM, or Volume
-function Get-WindowsActivationStatus {
-    $licenseInfo = Get-CimInstance -Query 'select * from SoftwareLicensingService'
-    $licenseType = $licenseInfo.OA3xOriginalProductKey
-
-    if ($licenseType -match 'OEM') {
-        return 'Windows Key: OEM (Original Equipment Manufacturer)'
-    } elseif ($licenseType -match 'Retail') {
-        return 'Windows Key: Retail (Full Packaged Product)'
-    } elseif ($licenseType -match 'VL1') {
-        return 'Windows Key: Volume License (VL1)'
-    } elseif ($licenseType -match 'RTL') {
-        return 'Windows Key: Retail (FPP, Boxed Copy)'
-    } elseif ($licenseType -match 'STA') {
-        return 'Windows Key: Static Activation Key (No activation required)'
-    } else {
-        return 'Windows Key: Unknown (Possibly Volume or other)'
-    }
+# Get and display the Windows activation status
+$WinVerAct = (cscript /Nologo "C:\Windows\System32\slmgr.vbs" /dli) -join ''
+$activationStatus = if ($WinVerAct -match 'Licensed') {
+    'Licensed'
+} elseif ($WinVerAct -match 'Out-of-Box') {
+    'Out-of-Box (OOB)'
+} elseif ($WinVerAct -match 'Non-Genuine Grace') {
+    'Non-Genuine Grace'
+} elseif ($WinVerAct -match 'Out of Tolerance Grace') {
+    'Out of Tolerance (OOT) Grace'
+} elseif ($WinVerAct -match 'Unlicensed') {
+    'Unlicensed'
+} elseif ($WinVerAct -match 'Notification') {
+    'Notification'
+} elseif ($WinVerAct -match 'Extended Grace') {
+    'Extended Grace'
+} else {
+    'Unknown'
 }
 
-# Get and display the Windows activation status
-$activationStatus = Get-WindowsActivationStatus
-if ($activationStatus -match 'Unknown' -or $activationStatus -match 'Not activated') {
-    Write-Host "Windows: " -nonewline
-	Write-Host "UNACTIVATED" -ForegroundColor Red
+$licenseType = if ($WinVerAct -match 'Partial Product Key: .*STA.*') {
+    'Static Activation Key (STA)'
+} elseif ($WinVerAct -match 'Partial Product Key: .*OEM.*') {
+    'OEM (Original Equipment Manufacturer)'
+} elseif ($WinVerAct -match 'Partial Product Key: .*Retail.*') {
+    'Retail (FPP, Boxed Copy)'
+} elseif ($WinVerAct -match 'Partial Product Key: .*VL1.*') {
+    'Volume License (VL1)'
+} elseif ($WinVerAct -match 'Partial Product Key: .*FPP.*') {
+    'Retail (Full Packaged Product)'
 } else {
-    Write-Host "Windows is activated: $activationStatus"
+    'Unknown (Possibly Volume or other)'
+}
+
+Write-Host "Windows activation status: $activationStatus"
+Write-Host "Windows key type: $licenseType"
+
+# Check if the Windows license type is Retail, OEM, or Volume
+$registryPath = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SoftwareProtectionPlatform"
+$keyName = "BackupProductKeyDefault"
+
+# Check if the registry path exists
+if (Test-Path $registryPath) {
+    try {
+        # Get the key's value 
+        $keyValue = (Get-ItemProperty -Path $registryPath -Name $keyName).$keyName
+
+        # If the value exists, print it
+        if ($keyValue) {
+            Write-Host "Registered Product Key: " -NoNewline
+            Write-Host "$keyValue" -BackgroundColor Black -ForegroundColor Red
+        } else {
+            Write-Warning "Value '$keyName' was not found."
+        }
+    } catch {
+        # Handle potential errors during retrieval 
+        Write-Host "Error retrieving the value: $($_.Exception.Message)"
+    }
+} else {
+    Write-Host "Registry path '$registryPath' does not exist."
 }
 
 Write-Host ""
@@ -172,16 +217,32 @@ Write-Host "Network" -ForegroundColor Magenta
 $hostname = [System.Net.Dns]::GetHostName()
 Write-Host "Hostname: $hostname"
 
-# External IP
-$externalIp = nslookup myip.opendns.com resolver1.opendns.com | findstr /R /C:"Address: .*" | select -last 1
-$externalIp = $externalIp -replace "Address: ",""
-Write-Host "External IP NSLOOKUP METHOD: " -NoNewline 
-Write-Host $externalIp -ForegroundColor YELLOW
 
 # External IP
-$externalIp = (Invoke-RestMethod -Uri 'https://ipinfo.io/json').ip
-Write-Host "External IP IPINFO: " -NoNewline 
-Write-Host $externalIp -ForegroundColor YELLOW
+$externalIp = $null
+
+# Try ipinfo.io first
+try {
+    $externalIp = (Invoke-RestMethod -Uri 'https://ipinfo.io/json').ip
+    Write-Host "External IP IPINFO: " -NoNewline
+    Write-Host $externalIp -ForegroundColor Yellow
+}
+catch {
+    Write-Host "Failed to retrieve IP from ipinfo.io. Trying checkip.amazonaws.com..." -ForegroundColor Red
+}
+
+# If ipinfo.io fails, try checkip.amazonaws.com
+if (-not $externalIp) {
+    try {
+        $externalIp = (Invoke-RestMethod -Uri 'https://checkip.amazonaws.com/').Trim()
+        Write-Host "External IP AMAZONAWS: " -NoNewline
+        Write-Host $externalIp -ForegroundColor Yellow
+    }
+    catch {
+        Write-Host "Failed to retrieve IP from checkip.amazonaws.com as well." -ForegroundColor Red
+    }
+}
+
 
 
 $networkAdapters = Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter "IPEnabled = 'True'"

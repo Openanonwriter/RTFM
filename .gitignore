@@ -835,3 +835,5 @@ iperf3.exe
 cygwin1.dll
 RTFM1.exe
 RTFM.EXE
+function Write-HostCenter {.ps1
+# RAT Detection Script.ps1
