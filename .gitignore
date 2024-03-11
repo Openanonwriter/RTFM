@@ -837,3 +837,9 @@ RTFM1.exe
 RTFM.EXE
 function Write-HostCenter {.ps1
 # RAT Detection Script.ps1
+Test/.reloc
+Test/.text
+Test/CERTIFICATE
+Test/Test.exe
+Test/.rsrc/version.txt
+Test/.rsrc/MANIFEST/1

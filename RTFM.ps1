@@ -1,5 +1,4 @@
 #Writen By Anthony Widick
-
 # Upgrade to admistrator
 if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     # Relaunch the script with elevated permissions
@@ -139,7 +138,7 @@ if (Test-Path $registryPath) {
 Write-Host ""
     Write-Host "================ $Title ================"
     Write-Host "(Hardware) Info"
-    Write-Host "(Network) Info"
+    Write-Host "(NDT) Network Diagnostic Tool"
     Write-Host "(App)s Info"
     Write-Host "(Windows) Info"
     Write-Host "(6)Install Anydesk, Malwarebytes, AdobeReader, Chrome"
@@ -226,15 +225,216 @@ while ($true) {
             Write-Host "----------END----------"
             Read-Host}
       #Network      
-'Network' { 
+'NDT' { 
             Clear-Host
-Write-Host ""
-Write-Host "Network" -ForegroundColor Magenta
-$hostname = [System.Net.Dns]::GetHostName()
-Write-Host "Hostname: $hostname"
+
+# Upgrade to admistrator
+if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    # Relaunch the script with elevated permissions
+    Start-Process -FilePath powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    exit
+}
+$currentDirectory = $PSScriptRoot
+function Show-MainMenu {
+    while ($true) {
+        function Write-HostCenter {
+            param($Message)
+            Write-Host ("{0}{1}" -f (' ' * (([Math]::Max(0, $Host.UI.RawUI.BufferSize.Width / 2) - [Math]::Floor($Message.Length / 2)))), $Message) 
+        }
+        cls
+        Write-HostCenter "=============== Network Diagnostic Tool Menu ===============" 
+        $menuTable = @(
+            [PSCustomObject]@{
+                Selector = 'eip'
+                Name = "External IP"
+                Description = "Get External IP info from https://ipinfo.io/ or if blocked uses Amazon"
+            }
+            [PSCustomObject]@{
+                Selector = 'info'
+                Name = "Lan and Nic Info"
+                Description = "IP Addressing, DNS, MACs, ROUTING, ECT"
+            }
+            [PSCustomObject]@{
+                Selector = 'iperf3'
+                Name = "iperf3.exe"
+                Description = "iperf3 is for measuring TCP, UDP, and SCTP bandwidth performance on IP networks."
+            }
+            [PSCustomObject]@{
+                Selector = "nmap"
+                Name = "NMAP"
+                Description = "Nmap is a network scanner for comprehensive discovery, service identification assessment of network devices."
+            }
+            [PSCustomObject]@{
+                Selector = "tnc"
+                Name = "Hello"
+                Description = "Empty Space At the moment!"
+            }
+            [PSCustomObject]@{
+                Selector = "q"
+                Name = "Quit"
+                Description = " "
+            }
+        )
+        # Display the table
+        $menuTable | Format-Table -AutoSize 
+        $choice = Read-Host "Enter your choice" 
+        switch ($choice) {
+            'info' { Show-infoMenu }
+            'eip' { Show-externalIPMenu }
+            'iperf3' { iperf3-subMenu }
+            'nmap' { nmap-subMenu }
+            '3' { Show-SubMenu }
+            'q' { Start-Process powershell -ArgumentList $currentDirectory\RTFM.ps1 
+            Exit }
+            default { Write-Host "Invalid choice. Press ENTER and Please try again."  -ForegroundColor Red
+            Read-Host }
+        }
+    }
+}
+
+function iperf3-submenu {
+    while ($true) {
+        $iperfPath = Get-ChildItem -Path $currentDirectory -Filter iperf3.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+        if ($null -ne $iperfPath) {
+        
+        Clear-Host
+        Write-Host "=== iperf3 ==="
+        Write-Host "(C)lient Mode IPV4"
+        Write-Host "(S)erver Mode IPV4"
+        Write-Host "Custom (Args)"
+        Write-Host "(Q) Back to Main Menu"
+    } else {
+        Write-Host "iperf3.exe not found in any subdirectory of the Tools directory." -ForegroundColor Red
+        Get-Location 
+        Read-Host
+        Show-MainMenu
+    }
+        $subChoice = Read-Host "Enter your subchoice"
+
+        switch ($subChoice) {
+            'c' { 
+                Clear-Host
+                Write-host "This will run with -c applied"
+                $iperfIP = Read-Host "Enter IPV4 Address"
+                $iperfport = Read-Host "Enter A Port Number"
+                $iperfArgs = Read-Host "Enter Aditional Argments if you want"
+                Start-Process -FilePath "powershell.exe" -ArgumentList "-NoExit", "-Command", "& '""$iperfPath""' -c $iperfIP -p $iperfport $iperfArgs"
+                Read-Host
+             }
+            's' { 
+                Clear-Host
+                Write-host "This will run with -s applied"
+                $iperfport = Read-Host "Enter A Port Number"
+                $iperfArgs = Read-Host "Enter Aditional Argments if you want"
+                Start-Process -FilePath $iperfPath -ArgumentList "-s -p $iperfport $iperfArgs"
+                Read-Host
+            }
+        'args' {                 
+            Clear-Host
+            & "$iperfPath" | Out-Default
+Write-Host $iperfHelp 
+            $iperfArgs = Read-Host "Enter Args"
+            Start-Process $iperfPath -ArgumentList "$iperfArgs"
+            Read-Host 
+        }
+        'q' { Show-MainMenu }
+        default { Write-Host "Invalid selection. Please choose again." 
+                Read-Host}
+        } 
+    }
+}
+
+function nmap-subMenu {
+    while ($true) {
+        $nmapPath = Get-ChildItem -Path $currentDirectory -Filter nmap.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+        $ncapKey = Get-ChildItem -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall, HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall  -EA SilentlyContinue | 
+            Get-ItemProperty -EA SilentlyContinue |
+            Where-Object {$_.DisplayName -like "*npcap*"} |
+            Select-Object -First 1
+
+        if ($null -ne $nmapPath -and $null -ne $ncapKey) {
+            Get-Location | Write-Host
+            Write-Host "=== NMAP MENU ==="
+            Write-Host "NMAP (A)RGS"
+            Write-Host "Custom NMAP Powershell Scipt(S)"
+            Write-Host "(Q) Back to Main Menu"
+
+            $subChoice = Read-Host "Enter your subchoice"
+            
+            switch ($subChoice) {
+                'a' {
+                    Clear-Host
+                    Get-Location
+                    & "$nmapPath" | Out-Default
+                    $nmapArgs = Read-Host "Arguments for Nmap"
+                    Get-Location
+                    if ([string]::IsNullOrEmpty($nmapArgs)) {
+                        nmap-subMenu
+                    } else {
+                    Start-Process -FilePath "powershell.exe" -ArgumentList "-NoExit", "-Command", "& '""$nmapPath""' $nmapArgs" -Verb RunAs
 
 
-# External IP
+                }
+            }
+                's' { 
+                    # Get the directory to search
+$directory = ".\Tools\Networking\nmap*"
+
+# Get all PowerShell scripts in the directory
+$scripts = Get-ChildItem -Path $directory -Filter *.ps1 -Recurse
+
+# Check if any scripts were found
+if ($scripts.Count -eq 0) {
+    Write-Host "No PowerShell scripts found in the directory."
+    Read-Host
+    return
+    nmap-subMenu
+}
+
+# Display the scripts in a table
+$scripts | Format-Table -Property Name
+
+# Get the script to execute
+$scriptName = Read-Host "Enter the name of the PS script to execute"
+
+# Check if the script exists
+$script = $scripts | Where-Object { $_.Name -eq $scriptName }
+if ($null -eq $script) {
+    Clear-Host
+    Write-Host "The script '$scriptName' was not found in the directory."
+    Read-Host
+    return
+    nmap-subMenu
+}
+
+# Execute the script
+& $script.FullName
+                }
+                'q' { Show-MainMenu }
+                default { Write-Host "Invalid subchoice. Please try again." }
+            }
+        } elseif ($null -eq $nmapPath -and $null -ne $ncapKey) {
+            Write-Host "nmap is not in the tools directory." -ForegroundColor Red
+            Read-Host
+            Show-MainMenu
+        } elseif ($null -ne $nmapPath -and $null -eq $ncapKey) {
+            Write-Host "npcap.exe is not installed." -ForegroundColor Red
+            Read-Host
+            Show-MainMenu
+        } else {
+            Write-Host "npcap.exe not installed and NMAP is not in Tools Directory." -ForegroundColor Red
+            Read-Host
+            Show-MainMenu
+        }
+    }
+}
+
+
+function Show-externalIPMenu {
+    while ($true) {
+        Clear-Host
+        Write-HostCenter "=============== External IP TOOL ===============" 
+        # External IP
 $externalIp = $null
 
 # Try ipinfo.io first
@@ -259,9 +459,25 @@ if (-not $externalIp) {
     }
 }
 
+        $subChoice = Read-Host "Press (Q) to Quit"
 
-
-$networkAdapters = Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter "IPEnabled = 'True'"
+        switch ($subChoice) {
+            'q' {
+                Show-MainMenu
+            }
+            default {
+                Write-Host "Invalid selection. Please choose again."
+                Read-Host
+            }
+        }
+    }
+}
+function Show-InfoMenu {
+    while ($true) {
+        Clear-Host
+        Write-HostCenter "=============== Network Info Menu ==============="
+        Write-Host "Local" -ForegroundColor Magenta
+        $networkAdapters = Get-WmiObject -Class Win32_NetworkAdapterConfiguration -Filter "IPEnabled = 'True'"
 
 foreach ($adapter in $networkAdapters) {
     Write-Host "Network Adapter: $($adapter.Description)"
@@ -284,18 +500,6 @@ if ($winrmStatus.State -eq "Running") {
 } else {
     Write-Host "WinRM: Disabled"
 }
-
-# Windows Remote Desktop
-$TermServ = Get-WmiObject -Class "Win32_TerminalServiceSetting" -Namespace root\CIMv2\TerminalServices
-$RDPStatus = $TermServ.GetAllowTSConnections
-if ($RDPStatus.ReturnValue -eq 0) {
-    Write-Host "Windows Remote Desktop: Enabled."
-} else {
-    Write-Host "Windows Remote Desktop: Disabled."
-}
-
-#Open-SSH
-# Check if OpenSSH Server is installed
 $sshServerInstalled = Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'
 
 if ($sshServerInstalled) {
@@ -309,15 +513,17 @@ if ($sshServerInstalled) {
 } else {
     Write-Host "OpenSSH Server: Not Intalled."
 }
-Write-Host ""
-Write-Host "----------END----------"
-Read-Host
 
-         }
-        'App' { 
+# Windows Remote Desktop
+$TermServ = Get-WmiObject -Class "Win32_TerminalServiceSetting" -Namespace root\CIMv2\TerminalServices
+$RDPStatus = $TermServ.GetAllowTSConnections
+if ($RDPStatus.ReturnValue -eq 0) {
+    Write-Host "Windows Remote Desktop: Enabled."
+} else {
+    Write-Host "Windows Remote Desktop: Disabled."
+}
 
 
-Clear-Host
 #Check if any remote desktop apps are installed, in the registry
 Write-Host "Checking for Remote Desktop programs found in registry..."
 
@@ -329,35 +535,61 @@ $registryKeys = @(
 
 # List of remote desktop programs to check
 $remoteAccessPrograms = @(
-    "TeamViewer",
-    "AnyDesk",
-    "Chrome Remote Desktop",
-    "Microsoft Remote Desktop",
-    "UltraVNC",
-    "RealVNC",
-    "LogMeIn",
-    "GoToMyPC",
-    "Zoho Assist",
-    "Splashtop",
-    "Remote Utilities",
+    "AeroAdmin",
     "Ammyy Admin",
-    "ShowMyPC",
-    "Radmin",
-    "NoMachine",
+    "AnyDesk",
+    "Anyplace Control",
+    "Apple Remote Desktop",
+    "Bomgar",
+    "Chrome Remote Desktop",
+    "Cisco WebEx",
+    "Citrix GoToAssist",
     "ConnectWise Control",
     "Dameware Remote Everywhere",
-    "Parallels Access",
-    "RemotePC",
-    "Zoho Assist",
-    "Bomgar",
-    "Citrix GoToAssist",
-    "Cisco WebEx",
+    "DeskRoll",
+    "DWService",
+    "FreeRDP",
+    "GoToMyPC",
+    "ISL Light",
+    "ISL Online",
     "Join.me",
-    "ScreenConnect",
-    "Apple Remote Desktop",
+    "LiteManager",
+    "LogMeIn",
+    "Mikogo",
     "Microsoft Intune",
+    "Microsoft Remote Desktop",
+    "mRemoteNG",
+    "NetSupport Manager",
+    "NoMachine",
+    "Parallels Access",
+    "Radmin",
+    "RDPSoft",
+    "RDP Wrapper Library",
+    "RealVNC",
+    "Remote Desktop Commander",
+    "Remote Desktop Connection Manager",
+    "Remote Desktop Manager",
+    "Remote Desktop Organizer",
+    "Remote Desktop Plus",
+    "Remote Desktop Spy",
+    "RemoteToPC",
+    "Remote Utilities",
+    "Remmina",
+    "ScreenConnect",
+    "ShowMyPC",
+    "SimpleHelp",
     "SolarWinds MSP Anywhere",
-    "SysAid"
+    "Splashtop",
+    "Supremo",
+    "SysAid",
+    "TeamViewer",
+    "Terminals",
+    "Thinfinity Remote Desktop",
+    "TightVNC",
+    "UltraVNC",
+    "VNC Connect",
+    "WebEx",
+    "Zoho Assist"
 )
 
 foreach ($keyPath in $registryKeys) {
@@ -374,6 +606,14 @@ foreach ($keyPath in $registryKeys) {
     }
 }
 
+Write-Host "Checking for Remote Desktop Applications in Running Processes..."
+$runningProcesses = Get-Process | Select-Object -ExpandProperty Name
+foreach ($programName in $remoteAccessPrograms) {
+    if ($runningProcesses -contains $programName) {
+        Write-Host "$programName" -ForegroundColor Green -NoNewline
+        Write-Host " is running."
+    }
+}
 
 # Check if any remote desktop apps are installed, in the Program Files directories
 Write-Host "Checking for Remote Access Programs in Program Files..."
@@ -442,6 +682,7 @@ $vpnNames = @(
     "FortiClient VPN"
 )
 # Check Registry Keys
+Write-Host "Checking for VPN Programs in Registry"
 foreach ($keyPath in $registryKeys) {
     $subKeys = Get-ChildItem -Path $keyPath
     foreach ($vpnName in $vpnNames) {
@@ -453,6 +694,15 @@ foreach ($keyPath in $registryKeys) {
                 break
             }
         }
+    }
+}
+# Check running processes
+Write-Host "Checking for VPN Programs in Running Processes..."
+$runningProcesses = Get-Process | Select-Object -ExpandProperty Name
+foreach ($vpnName in $vpnNames) {
+    if ($runningProcesses -contains $vpnName) {
+        Write-Host "$vpnName" -ForegroundColor Green -NoNewline
+        Write-Host " is running."
     }
 }
 # Check if any VPN apps are installed, in the Program Files directories
@@ -470,6 +720,36 @@ foreach ($vpnName in $vpnNames) {
 		Write-Host " found in Program Files (x86)"
     }
 }
+
+
+Write-Host "Wireless Info" -ForegroundColor Magenta 
+
+netsh wlan show profiles
+netsh wlan show wlanreport
+
+Write-Host ""
+Write-Host "----------END----------"
+        $subChoice = Read-Host "Press (Q) to Quit"
+
+        switch ($subChoice) {
+            'q' {
+                Show-MainMenu
+            }
+            default {
+                Write-Host "Invalid selection. Please choose again."
+                Read-Host
+            }
+        }
+    }
+}
+
+
+Show-MainMenu
+         }
+        'App' { 
+
+
+Clear-Host
 
 #AV's Installed
 Write-Host "Antivirus Applications" -ForegroundColor Magenta
@@ -689,13 +969,7 @@ Write-Host ""
 Write-Host "----------END----------"
 Read-Host}
 #End of Top Menu
-        'iperf' {
-                # Prompt the user for IPerf3 arguments
-                $iperfArgs = Read-Host "Enter IPerf3 Args"
 
-                # Run IPerf3 with the provided arguments
-                Start-Process -FilePath .\iperf3.exe -ArgumentList $iperfArgs
-        Read-Host}
         'ALL' { Write-Host "ALL" }
         'q' { exit }
         default { Write-Host "Invalid selection. Please choose again." }
