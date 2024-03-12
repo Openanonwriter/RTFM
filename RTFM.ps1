@@ -284,7 +284,7 @@ function Show-MainMenu {
             'iperf3' { iperf3-subMenu }
             'nmap' { nmap-subMenu }
             '3' { Show-SubMenu }
-            'q' { Start-Process powershell -ArgumentList $currentDirectory\RTFM.ps1 
+            'q' { Start-Process powershell -ArgumentList $currentDirectory\RTFM.ps1
             Exit }
             default { Write-Host "Invalid choice. Press ENTER and Please try again."  -ForegroundColor Red
             Read-Host }
