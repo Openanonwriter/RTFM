@@ -238,11 +238,69 @@ while ($true) {
             $unneeded0 = '-- SMART_NVME --------------------------------------------------------------'
             $unneeded1 = "        0    1    2    3    4    5    6    7    8    9"
             $unneeded2 = '     \+0 \+1 \+2 \+3 \+4 \+5 \+6 \+7 \+8 \+9 \+A \+B \+C \+D \+E \+F'
+            $unneeded3 = '-- SMART_READ_DATA ---------------------------------------------------------'
+            $unneeded4 = '-- SMART_READ_THRESHOLD ----------------------------------------------------'
+            
+            $diskInfoContent = Get-Content -Path $diskinfoPath
+            $healthStatuses = @()
+            
+            # Initialize variables to store the current disk's information
+            $model = $null
+            $status = $null
+            $percentage = $null
+            
+            # Extract the model names, health status, and percentages from the content
+            foreach ($line in $diskInfoContent) {
+                if ($line -match "Model : (.*)") {
+                    # If a model is already set, add the previous disk's info to the array before resetting the variables
+                    if ($model) {
+                        $healthStatuses += @{
+                            "Model" = $model
+                            "Status" = $status
+                            "Percentage" = $percentage
+                        }
+                    }
+                    $model = $matches[1]
+                    $status = $null
+                    $percentage = $null
+                }
+                elseif ($line -match "Health Status : (\w+) \((\d+) %\)") {
+                    $status = $matches[1]
+                    $percentage = [int]$matches[2]
+                }
+                elseif ($line -match "Health Status : (\w+)[^()]") {
+                    $status = $matches[1]
+                    $percentage = $null
+                }
+            }
+            
+            # Add the last disk's information if it hasn't been added yet
+            if ($model) {
+                $healthStatuses += @{
+                    "Model" = $model
+                    "Status" = $status
+                    "Percentage" = $percentage
+                }
+            }
+            
+            # Check the health status and percentage of each disk
+            foreach ($disk in $healthStatuses) {
+                $driveName = $disk.Model
+                $healthStatus = $disk.Status
+                $healthPercentage = $disk.Percentage
+            
+                #Write-Host "$driveName Health Status: $healthStatus" - ($healthPercentage ? " ($healthPercentage%)" : "")
+                # Beep if the health percentage is below 80% or the status is not 'Good'
+                if ((($healthPercentage -le 80) -and ($healthPercentage -ne $null)) -or ($healthStatus -notmatch '(G)')) {
+                    [console]::beep(1000,1000)
+                    Write-Host "$driveName requires attention!" -ForegroundColor Red
+                }
+            }            
             # Process each line in the file
-            if ($smartData -eq 'j;lasdfja;lsdfja;lsdjfaowerfnalsdfuasodfjas;lerfijas;odlfjasdl;fj'){
+            if ($smartData -eq '-- SMART_READ_THRESHOLD ----------------------------------------------------'){
             foreach ($line in $smartData) {
             # Ignore empty lines and the line with 'ID RawValues(6) Attribute Name'
-            if ([string]::IsNullOrWhiteSpace($line) -or $line -match "ID RawValues\(6\) Attribute Name") {
+            if ([string]::IsNullOrWhiteSpace($line) -or $line -match "ID Cur Wor Thr RawValues\(6\) Attribute Name") {
                 continue
             }
 
@@ -250,7 +308,7 @@ while ($true) {
                 # Start of S.M.A.R.T. section
                 $inSmartSection = $true
                 Write-Host "-- S.M.A.R.T. --------------------------------------------------------------"
-                Write-Host "ID RawValues(6) Attribute Name"
+                Write-Host "ID Cur Wor Thr RawValues(6) Attribute Name"
                 continue
             }
             elseif ($line -match "-- IDENTIFY_DEVICE ------") {
@@ -267,20 +325,22 @@ while ($true) {
                 $columns = $line -split '\s+'
                 $id = $columns[0]
                 $rawValue = $columns[4]
-                $attributeName = $columns[5,6,7,8,7,8,9,10]
+                $currentValue = $columns[1]
+                $worstValue = $columns[2]
+                $threshValue = $columns[3]
+                $attributeName = $columns[5,6,7,8,7,8,9]
                 # Convert the hexadecimal string to a decimal number using BigInteger
                 $decimalValue = [System.Numerics.BigInteger]::Parse($rawValue, [System.Globalization.NumberStyles]::HexNumber)
 
 
                 # Display the result
-                Write-Host "$id $decimalValue           $attributeName "
-                $unneeded0 = "-- SMART_NVME --------------------------------------------------------------"
-                $unneeded1 = "        0    1    2    3    4    5    6    7    8    9"
-                $unneeded2 = '     \+0 \+1 \+2 \+3 \+4 \+5 \+6 \+7 \+8 \+9 \+A \+B \+C \+D \+E \+F'
-                $undeeded3 = '-- SMART_NVME2--------------------------------------------------------------'
-            } elseif (-not ($line -match "^(000:|010:|020:|0AE:|030:|040:|050:|060:|070:|080:|090:|100:|110:|120:|130:|140:|150:|160:|170:|180:|190:|200:|210:|220:|230:|240:|250:|1A0:|0A0:|0B0:|0D0:|1B0:|1C0:|0E0:|0C0:|0F0:|1E0:|1D0:|1F0:|$shittext|$unneeded1|$unneeded2|$undeeded3)")) {        # If not in a S.M.A.R.T. section and not a filtered line, print the line
+                Write-Host "$id $currentValue $worstValue $threshValue" -NoNewline
+                Write-Host " $decimalValue" -NoNewline -ForegroundColor Yellow
+                Write-Host "   ----    $attributeName" -ForegroundColor Blue
+            } elseif (-not ($line -match "^($unneeded4|$unneeded3|000:|010:|020:|0AE:|030:|040:|050:|060:|070:|080:|090:|100:|110:|120:|130:|140:|150:|160:|170:|180:|190:|200:|210:|220:|230:|240:|250:|1A0:|0A0:|0B0:|0D0:|1B0:|1C0:|0E0:|0C0:|0F0:|1E0:|1D0:|1F0:|$unneeded0|$unneeded1|$unneeded2)")) {        # If not in a S.M.A.R.T. section and not a filtered line, print the line
                 Start-Sleep -Milliseconds 10
                 Write-Host $line
+                Clear-Variable -name cdiskinfo
             }
         }
     }
@@ -333,12 +393,7 @@ while ($true) {
 'NDT' { 
             Clear-Host
 
-# Upgrade to admistrator
-if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
-    # Relaunch the script with elevated permissions
-    Start-Process -FilePath powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
-    exit
-}
+
 $currentDirectory = $PSScriptRoot
 function Show-MainMenu {
     while ($true) {
@@ -389,12 +444,13 @@ function Show-MainMenu {
             'iperf3' { iperf3-subMenu }
             'nmap' { nmap-subMenu }
             '3' { Show-SubMenu }
-            'q' { Start-Process powershell -ArgumentList $currentDirectory\RTFM.ps1
-            Exit }
+            'q' { Show-Menu}
             default { Write-Host "Invalid choice. Press ENTER and Please try again."  -ForegroundColor Red
             Read-Host }
         }
+        break
     }
+    break
 }
 
 function iperf3-submenu {
@@ -515,7 +571,8 @@ if ($null -eq $script) {
 # Execute the script
 & $script.FullName
                 }
-                'q' { Show-MainMenu }
+                'q' { Show-MainMenu 
+                break}
                 default { Write-Host "Invalid subchoice. Please try again." }
             }
         } elseif ($null -eq $nmapPath -and $null -ne $ncapKey) {
@@ -531,7 +588,7 @@ if ($null -eq $script) {
             Read-Host
             Show-MainMenu
         }
-    }
+break    } 
 }
 
 
@@ -569,12 +626,14 @@ if (-not $externalIp) {
         switch ($subChoice) {
             'q' {
                 Show-MainMenu
+                break
             }
             default {
                 Write-Host "Invalid selection. Please choose again."
                 Read-Host
             }
         }
+        break
     }
 }
 function Show-InfoMenu {
@@ -627,7 +686,6 @@ if ($RDPStatus.ReturnValue -eq 0) {
 } else {
     Write-Host "Windows Remote Desktop: Disabled."
 }
-
 
 #Check if any remote desktop apps are installed, in the registry
 Write-Host "Checking for Remote Desktop programs found in registry..."
@@ -834,12 +892,10 @@ netsh wlan show wlanreport
 
 Write-Host ""
 Write-Host "----------END----------"
-        $subChoice = Read-Host "Press (Q) to Quit"
+$subChoice = Read-Host "Press (Q) to Quit"
 
         switch ($subChoice) {
-            'q' {
-                Show-MainMenu
-            }
+            'q' {Show-MainMenu}
             default {
                 Write-Host "Invalid selection. Please choose again."
                 Read-Host
