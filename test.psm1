@@ -1063,7 +1063,7 @@ while ($true) {
 
             # Run sfc first and capture output
             Write-Host "Running sfc.exe..."
-            $sfcOutput = sfc.exe /scannow 2>&1 | Tee-Object -Variable sfcResults
+            $sfcOutput = sfc.exe /scannow 2>&1 | ForEach-Object { Write-Host $_; $_ } | Tee-Object -Variable sfcResults
 
             # Check if sfc reported successful repair
             if ($sfcOutput -match "Windows Resource Protection found corrupt files and successfully repaired them.") {
