@@ -30,4 +30,3 @@ jobs:
           git commit -m "Upload rtfm.exe"
           git push
           Remove-Item -R ./* 
-          
