@@ -134,6 +134,7 @@ function Show-Menu {
             # If the value exists, print it
             if ($keyValue) {
                 Write-Host "Registered Product Key: " -NoNewline
+                Write-Host " "
                 Write-Host "$keyValue" -BackgroundColor Black -ForegroundColor Red
             }
             else {
@@ -1322,21 +1323,21 @@ else {
             param (
                 [string]$Path = "C:\Windows\Minidump"
             )
-            $expectedValue = "srv*DownstreamStore*https://msdl.microsoft.com/download/symbols"
+            #             $expectedValue = "srv*DownstreamStore*https://msdl.microsoft.com/download/symbols"
 
-# Get the current value of the environment variable
-$currentValue = [Environment]::GetEnvironmentVariable("_NT_SYMBOL_PATH", "Machine")
+            # # Get the current value of the environment variable
+            # $currentValue = [Environment]::GetEnvironmentVariable("_NT_SYMBOL_PATH", "Machine")
 
-# Check if the current value matches the expected value
-if ($currentValue -eq $expectedValue) {
-    Write-Output "The _NT_SYMBOL_PATH environment variable is already set correctly."
-    Write-Host " "
-} else {
-    # Set the environment variable to the expected value
-    [Environment]::SetEnvironmentVariable("_NT_SYMBOL_PATH", $expectedValue, "Machine")
-    Write-Output "The _NT_SYMBOL_PATH environment variable has been updated."
-    Write-Host " "
-}
+            # # Check if the current value matches the expected value
+            # if ($currentValue -eq $expectedValue) {
+            #     Write-Output "The _NT_SYMBOL_PATH environment variable is already set correctly."
+            #     Write-Host " "
+            # } else {
+            #     # Set the environment variable to the expected value
+            #     [Environment]::SetEnvironmentVariable("_NT_SYMBOL_PATH", $expectedValue, "Machine")
+            #     Write-Output "The _NT_SYMBOL_PATH environment variable has been updated."
+            #     Write-Host " "
+            # }
             $dumpchk = Get-ChildItem -Path $PSScriptRoot -Filter dumpchk.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
             $files = Get-ChildItem -Path $Path -Filter *.dmp
             $index = 1
