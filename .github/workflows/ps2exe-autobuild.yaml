@@ -29,3 +29,5 @@ jobs:
           git add ./rtfm.exe
           git commit -m "Upload rtfm.exe"
           git push
+          Remove-Item -R ./* 
+          
