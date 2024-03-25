@@ -23,6 +23,7 @@ RTFM is a modular PowerShell script designed for rapid computer diagnostics and 
 
 Why Powershell: PowerShell offered a convenient and versatile solution with a great support built in to windows. It's already included in Windows 10 and 11, removing the hassle of installing additional software while guaranteeing compatibility.
 
+![Screenshot 2024-03-24 160151](https://github.com/Openanonwriter/RTFM/assets/38511943/446b2854-59d3-445f-b2d1-7cb352988447)
 
 > **Warning**
 > !!!  This .EXE is highly likely to be detected by antivirus software.  If you don't understand the risks or the source code behind this executable, DO NOT run it. 
@@ -44,9 +45,6 @@ Checks BitLocker encryption status: It lets you know if BitLocker, a drive encry
 
 Important Notes:<br>
 If you see a BitLocker recovery key listed, make sure to store it very securely. This key is the only way to recover data if you ever lose access to your encrypted drive.<br>
-
-
-## (HARDWARE) INFO 
 
 
 ## NDT (NETWORK DIAGNOSTIC TOOL)
@@ -247,3 +245,6 @@ This is my current setup.
 ```
 
 5. Run RTFM.exe 
+
+![Screenshot 2024-03-24 160825](https://github.com/Openanonwriter/RTFM/assets/38511943/48171bc9-9ecb-4592-874e-178f9f1ceb76)
+![Screenshot 2024-03-24 204022](https://github.com/Openanonwriter/RTFM/assets/38511943/a8c2c37d-55cb-4a3d-af4f-267d76991ab6)
