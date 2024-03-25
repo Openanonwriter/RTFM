@@ -132,7 +132,7 @@ Requires Internet: It needs internet access to check for updates from Microsoft 
 SFC Scan Status: Attempts to provide the date of the last system file check (SFC) run, which is a tool for repairing corrupt system files. If not found, it mentions when the diagnostic log began.
 
 Mini-Dumps: Checks for the presence of mini-dumps (crash logs) in the standard Windows directory.
-Checks Windows log events 1001 and Pulls the BugCheckCode with all four parameters.<br>
+Analyzes Windows log events 1001 and extract the BugCheckCode along with its four parameters. No more going to eventlog and messing around.<br>
 Example: 
 ```
 BugCheckCode: 0x0000007e
@@ -243,17 +243,7 @@ This is my current setup.
 │   │   └── nmap-7.92
 │   ├── SysinternalsSuite
 │   └── Windows
-│       └── DBG
 └── readme.md
 ```
-
-4. Download WinDbg: <br>
-Visit the Windows SDK download page.
-Download the Windows SDK. https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/<br>
-During installation, select only the Debugging Tools for Windows component.<br>
-Copy WinDbg Executable:<br>
-Once installed, navigate to the installation directory. Typically, it’s located at C:\Program Files (x86)\Windows Kits\10\Debuggers\x64.<br>
-Create a Portable Version by copying that directy into a desired location, such as ./Tools/Windows/DBG/.<br>
-Now you have a portable version of WinDbg that can be used to analyze BSOD (Blue Screen of Death) codes.<br>
 
 5. Run RTFM.exe 
