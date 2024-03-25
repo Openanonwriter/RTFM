@@ -1,5 +1,5 @@
 // Writen by Anthony Widick 
-// 3/25/2024 
+// 3/25/2024, 2:41AM and I have work at 8:30
 // V0.1
 // Released under GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
 // This is my first C program, and my first acutal .EXE 

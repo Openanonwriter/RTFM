@@ -240,7 +240,7 @@ This is my current setup.
 └── readme.md
 ```
 
-5. Run RTFM.exe 
+5. Run RTFM.exe (RTFM.ps1 MUST be in the same directory.)
 
 ![Screenshot 2024-03-24 160825](https://github.com/Openanonwriter/RTFM/assets/38511943/48171bc9-9ecb-4592-874e-178f9f1ceb76)
 ![Screenshot 2024-03-24 204022](https://github.com/Openanonwriter/RTFM/assets/38511943/a8c2c37d-55cb-4a3d-af4f-267d76991ab6)
