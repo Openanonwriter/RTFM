@@ -26,13 +26,9 @@ Why Powershell: PowerShell offered a convenient and versatile solution with a gr
 ![Screenshot 2024-03-24 160151](https://github.com/Openanonwriter/RTFM/assets/38511943/446b2854-59d3-445f-b2d1-7cb352988447)
 
 > **Warning**
-> !!!  This .EXE is highly likely to be detected by antivirus software.  If you don't understand the risks or the source code behind this executable, DO NOT run it. 
-Please read for more information https://github.com/MScholtes/PS2EXE/issues/111 !!! <br>
+> !!! If you don't understand the risks or the source code behind this executable, DO NOT run it. <br>
 > !!! This PowerShell script modifies files. It's your responsibility to verify all settings and paths before running. Proceed at your own risk.
 !!!<br>
->  I take no liability for any potential damages. <br>
- 
-
 
 ## PRE-MENU
 Provides essential system information:  This includes your Windows version (Windows 11 Pro 23H2), how long the system has been running (uptime), when it was last booted, and the original installation date. <br>
