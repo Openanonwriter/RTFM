@@ -150,26 +150,28 @@ function Show-Menu {
     }
 
     $BitLockerStatus = (Get-BitLockerVolume -MountPoint C:).ProtectionStatus
-# $BitLockerStatus = 'OFF'
-if ($BitLockerStatus -eq "On") {
-    #$bitlockeroutput = "207284-425711-631675-392370-433455-420673-432069-07249"
-    $bitlockeroutput = manage-bde -protectors -get C:
-    $pattern = "\d{6}-\d{6}-\d{6}-\d{6}-\d{6}-\d{6}-\d{6}-\d{6}"
-    $bitlockercode = $bitlockeroutput -match $pattern
+    # $BitLockerStatus = 'OFF'
+    if ($BitLockerStatus -eq "On") {
+        #$bitlockeroutput = "207284-425711-631675-392370-433455-420673-432069-07249"
+        $bitlockeroutput = manage-bde -protectors -get C:
+        $pattern = "\d{6}-\d{6}-\d{6}-\d{6}-\d{6}-\d{6}-\d{6}-\d{6}"
+        $bitlockercode = $bitlockeroutput -match $pattern
 
-    # Write-Host $Matches}
-    if ($bitlockeroutput -match $pattern) {
-        Write-host "BitLocker: " -NoNewline
-        Write-host "Enabled" -ForegroundColor Red
-        Write-host "Recovery Key:" -NoNewline
-        write-host $bitlockercode -BackgroundColor Black -ForegroundColor Red
-    } else{
-        Write-host "Recovery Key not found in the output" # More informative message
+        # Write-Host $Matches}
+        if ($bitlockeroutput -match $pattern) {
+            Write-host "BitLocker: " -NoNewline
+            Write-host "Enabled" -ForegroundColor Red
+            Write-host "Recovery Key:" -NoNewline
+            write-host $bitlockercode -BackgroundColor Black -ForegroundColor Red
+        }
+        else {
+            Write-host "Recovery Key not found in the output" # More informative message
+        }
     }
-} else{
-    Write-host "BitLocker: " -NoNewline
-    Write-host "Disabled" -ForegroundColor Green 
-}   
+    else {
+        Write-host "BitLocker: " -NoNewline
+        Write-host "Disabled" -ForegroundColor Green 
+    }   
 
     Write-Host ""
     Write-Host "================ $Title ================"
@@ -183,31 +185,31 @@ if ($BitLockerStatus -eq "On") {
 }
 
 #Serach Item by folder name and parent folder recusivleyfunction Search-ItemPathByName {
-    function Search-ItemPathByName {
+function Search-ItemPathByName {
     param (
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string[]]$ItemNames,
-        [Parameter(Mandatory=$true)]
+        [Parameter(Mandatory = $true)]
         [string]$Path,
-        [Parameter(Mandatory=$false)]
+        [Parameter(Mandatory = $false)]
         [string]$textcolor
     )
     
     # Search for the files and folders recursively and filter based on name
     $results = Get-ChildItem -Path $Path -Recurse -ErrorAction SilentlyContinue |
-               Where-Object {
-                   foreach ($itemName in $ItemNames) {
-                       if ($_.Name -eq $itemName -or $_.Name -like "*$itemName*") {
-                           return $true
-                       }
-                   }
-                   return $false
-               }
+    Where-Object {
+        foreach ($itemName in $ItemNames) {
+            if ($_.Name -eq $itemName -or $_.Name -like "*$itemName*") {
+                return $true
+            }
+        }
+        return $false
+    }
 
     # Output the names and full paths of the found items
     foreach ($result in $results) {
         Write-ColoredText "$($result.FullName)" $textcolor
-}
+    }
 }
 
 
@@ -219,7 +221,7 @@ function Write-ColoredText {
 
     # Validate color input
     $validColors = "Black", "DarkBlue", "DarkGreen", "DarkCyan", "DarkRed", "DarkMagenta", "DarkYellow", "Gray",
-                   "DarkGray", "Blue", "Green", "Cyan", "Red", "Magenta", "Yellow", "White"
+    "DarkGray", "Blue", "Green", "Cyan", "Red", "Magenta", "Yellow", "White"
     if ($validColors -notcontains $Color) {
         Write-Host "Invalid color specified. Available colors: $($validColors -join ', ')" -ForegroundColor Red
         return
@@ -418,7 +420,8 @@ while ($true) {
                         Write-Host "$id $currentValue $worstValue $threshValue" -NoNewline
                         Write-Host " $decimalValue" -NoNewline -ForegroundColor Yellow
                         Write-Host "   ----    $attributeName" -ForegroundColor Blue
-                    } elseif (-not ($line -match "^($unneeded4|$unneeded3|000:|010:|020:|0AE:|030:|040:|050:|060:|070:|080:|090:|100:|110:|120:|130:|140:|150:|160:|170:|180:|190:|200:|210:|220:|230:|240:|250:|1A0:|0A0:|0B0:|0D0:|1B0:|1C0:|0E0:|0C0:|0F0:|1E0:|1D0:|1F0:|$unneeded0|$unneeded1|$unneeded2)")) {
+                    }
+                    elseif (-not ($line -match "^($unneeded4|$unneeded3|000:|010:|020:|0AE:|030:|040:|050:|060:|070:|080:|090:|100:|110:|120:|130:|140:|150:|160:|170:|180:|190:|200:|210:|220:|230:|240:|250:|1A0:|0A0:|0B0:|0D0:|1B0:|1C0:|0E0:|0C0:|0F0:|1E0:|1D0:|1F0:|$unneeded0|$unneeded1|$unneeded2)")) {
                         # If not in a S.M.A.R.T. section and not a filtered line, print the line
                         Start-Sleep -Milliseconds 10
                         Write-Host $line
@@ -776,11 +779,13 @@ while ($true) {
                         if ($sshServiceStatus.Status -eq 'Running') {
                             Write-Host "OpenSSH SSH Server: " -NoNewline
                             Write-Host "RUNNING" -ForegroundColor Red
-                        } else {
+                        }
+                        else {
                             Write-Host "OpenSSH SSH Server: " -NoNewline
                             Write-Host "INSTALLED, NOT RUNNING." -ForegroundColor Yellow
                         }
-                    } else {
+                    }
+                    else {
                         Write-Host "OpenSSH Server: NOT INSTALLED."
                     }
                     
@@ -1095,43 +1100,47 @@ while ($true) {
             Read-Host
 
         }
-        '6' { $defaultinstalltable = @(
-            "Malwarebytes.Malwarebytes",
-            "Adobe.Acrobat.Reader.64-bit",
-            "Google.Chrome",
-            "AnyDeskSoftwareGmbH.AnyDesk"
-        )
+        '6' {
+            $defaultinstalltable = @(
+                "Malwarebytes.Malwarebytes",
+                "Adobe.Acrobat.Reader.64-bit",
+                "Google.Chrome",
+                "AnyDeskSoftwareGmbH.AnyDesk"
+            )
             function winget.list.installed($appId) {
-            $installedApps = winget list
-            return $installedApps -match $appId
-        }
+                $installedApps = winget list
+                return $installedApps -match $appId
+            }
         
-        # Install or update an application
-        function installOrUpdateApp($appId) {
-            if (winget.list.installed $appId) {
-                Write-Host "Updating $appId..."
-                winget upgrade --id $appId
+            # Install or update an application
+            function installOrUpdateApp($appId) {
+                if (winget.list.installed $appId) {
+                    Write-Host "Updating $appId..."
+                    winget upgrade --id $appId
+                }
+                else {
+                    Write-Host "Installing $appId..."
+                    winget install --exact --id $appId
+                }
+            }
+            Write-Host "Checking if AppInstaller is Installed"
+            if ((Get-AppPackage -AllUsers).Name -like "*DesktopAppInstaller_8wekyb3d8bbwe*") {
+                Write-Host "Is not installed, installing now"
+                Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
+                foreach ($app in $defaultinstalltable) {
+                    installOrUpdateApp $app
+                }
+                Write-Host "Installed"
             }
             else {
-                Write-Host "Installing $appId..."
-                winget install --exact --id $appId
-            }
-        }
-        Write-Host "Checking if AppInstaller is Installed"
-        if ((Get-AppPackage -AllUsers).Name -like "*DesktopAppInstaller_8wekyb3d8bbwe*"){
-            Write-Host "Is not installed, installing now"
-            Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
-            foreach ($app in $defaultinstalltable) {
-                installOrUpdateApp $app}
-                Write-Host "Installed"
-        }else {
-        # Check and install/update applications
-        foreach ($app in $defaultinstalltable) {
-        installOrUpdateApp $app}
-        Write-Host "Apps should be installed and uptodate, check above for errors."
+                # Check and install/update applications
+                foreach ($app in $defaultinstalltable) {
+                    installOrUpdateApp $app
+                }
+                Write-Host "Apps should be installed and uptodate, check above for errors."
         
-        Read-Host
-        # End of Menu 6
+                Read-Host
+                # End of Menu 6
             }
         } 
 
@@ -1155,8 +1164,10 @@ while ($true) {
         
                 # Run sfc again
                 sfc.exe /scannow 2>&1 | ForEach-Object { Write-Host $_; $_ } | Tee-Object -Variable sfcResults
-            }else{($sfcOutput -match "Windows Resource Protection did not find any integrity violations." )
-            Write-Host "Windows Resource Protection did not find any integrity violations."
+            }
+            else {
+($sfcOutput -match "Windows Resource Protection did not find any integrity violations." )
+                Write-Host "Windows Resource Protection did not find any integrity violations."
             }
             Write-Host "DISM and SFC completed" -ForegroundColor Magenta
         
@@ -1187,9 +1198,11 @@ while ($true) {
                 if ($hasVolumeC) { 
                     if ($partitionStyle -eq "MBR") {
                         Write-Host "Windows is (MBR) Disk:$diskNumber"
-                    } elseif ($partitionStyle -eq "GPT") {
+                    }
+                    elseif ($partitionStyle -eq "GPT") {
                         Write-Host "Windows is (GPT) Disk:$diskNumber"
-                    } else {
+                    }
+                    else {
                         Write-Host "Disk $diskNumber (unknown partition style) is associated with volume C:"
                     }
                 }
@@ -1214,7 +1227,8 @@ while ($true) {
                         Write-Host "Disk $($disk.DeviceID) is at " -NoNewline
                         Write-Host "$usedSpacePercent%" -ForegroundColor Red -NoNewline
                         Write-Host " capacity."
-                    } else {
+                    }
+                    else {
                         Write-Host "Disk $($disk.DeviceID) is at $usedSpacePercent% capacity."
                     }
                 }
@@ -1251,42 +1265,42 @@ while ($true) {
             }
             Get-AntiVirusProduct | Out-String
 
-# Windows Updates
-Write-Host "Windows Updates" -ForegroundColor Magenta
+            # Windows Updates
+            Write-Host "Windows Updates" -ForegroundColor Magenta
 
-# Check for internet connectivity
-$pingResult = Test-Connection -ComputerName microsoft.com -Count 1 -Quiet
+            # Check for internet connectivity
+            $pingResult = Test-Connection -ComputerName microsoft.com -Count 1 -Quiet
 
-if ($pingResult) {
-    # Create a session to interact with Windows Update
-    try {
-        $UpdateSession = New-Object -ComObject "Microsoft.Update.Session"
-        $UpdateSearcher = $UpdateSession.CreateUpdateSearcher()
+            if ($pingResult) {
+                # Create a session to interact with Windows Update
+                try {
+                    $UpdateSession = New-Object -ComObject "Microsoft.Update.Session"
+                    $UpdateSearcher = $UpdateSession.CreateUpdateSearcher()
 
-        # Search for updates that are not yet installed
-        $SearchResult = $UpdateSearcher.Search('IsInstalled=0')
+                    # Search for updates that are not yet installed
+                    $SearchResult = $UpdateSearcher.Search('IsInstalled=0')
 
-        # Filter updates by severity
-        $critical = $SearchResult.updates | Where-Object { $_.MsrcSeverity -eq "Critical" }
-        $important = $SearchResult.updates | Where-Object { $_.MsrcSeverity -eq "Important" }
-        $optional = $SearchResult.updates | Where-Object { ($_.MsrcSeverity -ne "Critical") -and ($_.MsrcSeverity -ne "Important") }
+                    # Filter updates by severity
+                    $critical = $SearchResult.updates | Where-Object { $_.MsrcSeverity -eq "Critical" }
+                    $important = $SearchResult.updates | Where-Object { $_.MsrcSeverity -eq "Important" }
+                    $optional = $SearchResult.updates | Where-Object { ($_.MsrcSeverity -ne "Critical") -and ($_.MsrcSeverity -ne "Important") }
 
-        # Calculate total updates
-        $totalUpdates = $critical.Count + $important.Count + $optional.Count
+                    # Calculate total updates
+                    $totalUpdates = $critical.Count + $important.Count + $optional.Count
 
-        # Display the counts
-        Write-Host "Critical Count: $($critical.Count)"
-        Write-Host "Important Count: $($important.Count)"
-        Write-Host "Optional Count: $($optional.Count)"
-        Write-Host "Total Updates: $totalUpdates"
-    }
-    catch {
-        Write-Host "An error occurred while checking for updates: $($_.Exception.Message)"
-    }
-}
-else {
-    Write-Host "No network connection. Please check your internet connectivity."
-}
+                    # Display the counts
+                    Write-Host "Critical Count: $($critical.Count)"
+                    Write-Host "Important Count: $($important.Count)"
+                    Write-Host "Optional Count: $($optional.Count)"
+                    Write-Host "Total Updates: $totalUpdates"
+                }
+                catch {
+                    Write-Host "An error occurred while checking for updates: $($_.Exception.Message)"
+                }
+            }
+            else {
+                Write-Host "No network connection. Please check your internet connectivity."
+            }
 
             Write-Host ' '
             # Diagnostic data
@@ -1297,11 +1311,12 @@ else {
             # Find the last line that contains the string "[SR]"
             if ($lastSfcLine = $cbslog | Select-String -Pattern "Repair complete" | Select-Object -Last 1) {
                 $lastSfcDate = $lastSfcLine.Line.Substring(0, 19)
-                Write-Host "The last time SFC was ran was $lastSfcDate."} 
-                else { 
-                    $rotationDateString = $cbslog | Select-Object -First 1
-                    $rotationDate = $rotationDateString.Substring(0, 19)
-                    Write-Host "SFC last run is not in CBS log since: $rotationDate" 
+                Write-Host "The last time SFC was ran was $lastSfcDate."
+            } 
+            else { 
+                $rotationDateString = $cbslog | Select-Object -First 1
+                $rotationDate = $rotationDateString.Substring(0, 19)
+                Write-Host "SFC last run is not in CBS log since: $rotationDate" 
             }
             
             Write-Host " "
@@ -1317,82 +1332,43 @@ else {
             else {
                 Write-Host "Mini-Dumps found: 0"
             }
-
-        function Minidump-Menu {
-            param (
-                [string]$Path = "C:\Windows\Minidump"
-            )
-            $expectedValue = "srv*DownstreamStore*https://msdl.microsoft.com/download/symbols"
-
-# Get the current value of the environment variable
-$currentValue = [Environment]::GetEnvironmentVariable("_NT_SYMBOL_PATH", "Machine")
-
-# Check if the current value matches the expected value
-if ($currentValue -eq $expectedValue) {
-    Write-Output "The _NT_SYMBOL_PATH environment variable is already set correctly."
-    Write-Host " "
-} else {
-    # Set the environment variable to the expected value
-    [Environment]::SetEnvironmentVariable("_NT_SYMBOL_PATH", $expectedValue, "Machine")
-    Write-Output "The _NT_SYMBOL_PATH environment variable has been updated."
-    Write-Host " "
-}
-            $dumpchk = Get-ChildItem -Path $PSScriptRoot -Filter dumpchk.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-            $files = Get-ChildItem -Path $Path -Filter *.dmp
-            $index = 1
-            foreach ($file in $files) {
-                Write-Host "$index. $($file.Name)"
-                $index++
-                Write-Host "Date: $($file.LastWriteTime)"
-                $apple = & $dumpchk $($file.FullName)
-                $fileContents = $apple
-        
-                foreach ($line in $fileContents) {
-                    if ($line -match '^BugCheckCode\s+(.+)$') {
-                        $BugCheckCode = $matches[1]
-                    }
-                    elseif ($line -match '^BugCheckParameter1\s+(.+)$') {
-                        $BugCheckParameter1 = $matches[1]
-                    }
-                    elseif ($line -match '^BugCheckParameter2\s+(.+)$') {
-                        $BugCheckParameter2 = $matches[1]
-                    }
-                    elseif ($line -match '^BugCheckParameter3\s+(.+)$') {
-                        $BugCheckParameter3 = $matches[1]
-                    }
-                    elseif ($line -match '^BugCheckParameter4\s+(.+)$') {
-                        $BugCheckParameter4 = $matches[1]
-                    }
-                }
-                Write-Host "BugCheckCode:        $BugCheckCode "
-                Write-Host "BugCheckParameter1:" $BugCheckParameter1
-                Write-Host "BugCheckParameter2:" $BugCheckParameter2
-                Write-Host "BugCheckParameter3:" $BugCheckParameter3
-                Write-Host "BugCheckParameter4:" $BugCheckParameter4
-                Write-Host "--------------------"
-                Write-Host " "
+            Write-Host ""
+            Write-host "Bugcheck 1001 Codes from Event Log"
+                $FilterHashtable = @{
+                LogName = 'System'
+                ID = 1001
             }
-            $selection = Read-Host "Please select a file by number (or 'exit' to quit)"
-            if ($selection -eq 'exit' -or 'q') {
-                Show-Menu
-            }
-             $dumpchk = Get-ChildItem -Path $PSScriptRoot -Filter dumpchk.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-             Write-Host $dumpchk
-             $selectedFile = $files[$selection - 1]
-             if ($selectedFile -ne $null) {
-            Clear-Host
-             & $dumpchk -e $($selectedFile.FullName)
-                 Read-Host
-             }
             
-        }
-        if ($miniDumps.Count -ge 1) {
-        Minidump-Menu 
-        }else
-        { 
-        Write-Host "end"
-        Read-Host
-        }
+            # Get the events
+            $events = Get-WinEvent -FilterHashtable $FilterHashtable
+            
+            # Initialize a counter for numbering
+            $counter = 1
+            
+            # Loop through each event and format the output
+            foreach ($event in $events) {
+                # Extract the BugCheckCode values
+                $bugCheckCode = ($event.Properties[0].Value -split ' ')[0]
+                $bugCheckParam1 = ($event.Properties[0].Value -split '[,|(]')[1]
+                $bugCheckParam2 = ($event.Properties[0].Value -split '[,|(]')[2]
+                $bugCheckParam3 = ($event.Properties[0].Value -split '[,|(]')[3]
+                $bugCheckParam4 = ($event.Properties[0].Value -split '[,|(|)]')[4]
+            
+$formattedOutput = @"
+$counter. ---------------------------
+Bugcheck Date: $($event.TimeCreated.ToString('MM/dd/yyyy HH:mm:ss'))
+BugCheckCode: $bugCheckCode
+BugCheckParameter1: $bugCheckParam1
+BugCheckParameter2: $bugCheckParam2
+BugCheckParameter3: $bugCheckParam3
+BugCheckParameter4: $bugCheckParam4
+
+"@
+                Write-Host $formattedOutput
+                $counter++
+            }
+            Write-Host "--------Press [Enter] to return to Main Menu--------"
+            Read-Host
         }
         'about' {
             Clear-Host
@@ -1433,7 +1409,8 @@ if ($currentValue -eq $expectedValue) {
             #Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
             #The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
             #THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-        Read Host}
+            Read Host
+        }
         'q' { exit }
         default { Write-Host "Invalid selection. Please choose again." }
     }
