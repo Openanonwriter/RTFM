@@ -131,11 +131,16 @@ Requires Internet: It needs internet access to check for updates from Microsoft 
 
 SFC Scan Status: Attempts to provide the date of the last system file check (SFC) run, which is a tool for repairing corrupt system files. If not found, it mentions when the diagnostic log began.
 
-Mini-Dumps: Checks for the presence of mini-dumps (crash logs) in the standard Windows directory. A high number of mini-dumps may suggest system instability.
-Symbol Path Configuration: Ensures the _NT_SYMBOL_PATH environment variable is set correctly. This is needed for advanced debugging and symbol resolution during crash analysis.
-
-Mini-Dump Analysis (Optional): If the script locates mini-dumps and a tool called dumpchk.exe is available, it offers a basic menu to analyze individual crash files. This provides BugCheck codes and parameters that could be useful for troubleshooting.
-Overall Purpose: This script provides a quick snapshot of system health, focusing on disk usage, basic diagnostics, installed anti-virus software, and the presence of pending Windows updates.
+Mini-Dumps: Checks for the presence of mini-dumps (crash logs) in the standard Windows directory.
+Checks Windows log events 1001 and Pulls the BugCheckCode with all four parameters.<br>
+Example: 
+```
+BugCheckCode: 0x0000007e
+BugCheckParameter1: 0xffffffffc0000005
+BugCheckParameter2:  0xfffff80259dc3de7
+BugCheckParameter3:  0xfffff68c19fe6978
+BugCheckParameter4:  0xfffff8025b53c900
+```
 
 Important Notes:
 
