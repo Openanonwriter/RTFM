@@ -10,3 +10,4 @@ Tools/Networking/
 Tools/Networking/nmap-7.92
 .vscode/launch.json
  .vscode/
+.vscode/tasks.json

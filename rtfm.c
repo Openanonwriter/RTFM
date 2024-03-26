@@ -76,7 +76,7 @@ int main() {
     si.hStdError = GetStdHandle(STD_ERROR_HANDLE);
 
     char command_line[MAX_PATH];
-    snprintf(command_line, MAX_PATH, "powershell.exe -File \"%s\"", ps_script_path);
+    snprintf(command_line, MAX_PATH, "powershell.exe -executionpolicy bypass -File \"%s\"", ps_script_path);
 
     if (!CreateProcessA(NULL, command_line, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
         fprintf(stderr, "Error: Failed to create process.\n");
