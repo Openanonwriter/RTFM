@@ -151,6 +151,9 @@ function Show-Menu {
         Write-Host "Registry path '$registryPath' does not exist."
     }
 
+
+    #There is an error here, still have not found it, saw it on a computer once and trying to remember. It might be here at Get-Bitlockervolume with 
+    # windows default error handling yelling in the terminal. Dont want to add 2> $null until i know what it is, or if i can better handle. 
     $BitLockerStatus = (Get-BitLockerVolume -MountPoint C:).ProtectionStatus
     # $BitLockerStatus = 'OFF'
     if ($BitLockerStatus -eq "On") {
