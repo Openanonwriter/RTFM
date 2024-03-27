@@ -1132,7 +1132,12 @@ while ($true) {
             Write-Host "Checking if AppInstaller is Installed"
             if ((Get-AppPackage -AllUsers).Name -like "*DesktopAppInstaller_8wekyb3d8bbwe*") {
                 Write-Host "Is not installed, installing now"
-                Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
+                $progressPreference = 'silentlyContinue'
+                Write-Information "Downloading WinGet and its dependencies..."
+                Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
+                Write-Host "Is not installed, installing now"
+                Add-AppxPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
+                echo y | winget list
                 foreach ($app in $defaultinstalltable) {
                     installOrUpdateApp $app
                 }
