@@ -5,6 +5,7 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Start-Process -FilePath powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
     exit
 }
+
 function Show-Menu {
     param (
         [string]$Title = 'My Menu'
@@ -142,7 +143,8 @@ function Show-Menu {
         }
         catch {
             # Handle potential errors during retrieval 
-            Write-Host "Error retrieving the value: $($_.Exception.Message)"
+            Write-Host "Unable to Retrive key from Registry"
+            #Write-Host "Error retrieving the value: $($_.Exception.Message)"
         }
     }
     else {
@@ -181,6 +183,7 @@ function Show-Menu {
     Write-Host "(Windows) Info"
     Write-Host "(6)Install Anydesk, Malwarebytes, AdobeReader, Chrome"
     Write-Host "(Repair) Windows"
+    Write-Host "(About)"
     Write-Host "(Q)uit"
 }
 
@@ -1189,7 +1192,7 @@ while ($true) {
                 $diskNumber = $disk.Number
 
                 # Get volumes associated with the current disk
-                $volumes = Get-Partition -DiskNumber $disk.Number | Get-Volume
+                $volumes = Get-Partition -DiskNumber $disk.Number 2> $null | Get-Volume 
 
                 $windowsDriveLetter = ($env:SystemDrive -replace ':').Trim()  
                 # Check if there's a C: volume on this disk
@@ -1340,7 +1343,7 @@ while ($true) {
             }
             
             # Get the events
-            $events = Get-WinEvent -FilterHashtable $FilterHashtable
+            $events = Get-WinEvent -FilterHashtable $FilterHashtable 2> $null
             
             # Initialize a counter for numbering
             $counter = 1
@@ -1371,6 +1374,8 @@ BugCheckParameter4: $bugCheckParam4
             Read-Host
         }
         'about' {
+            $Host.UI.RawUI.BackgroundColor = 'black'
+            $Host.UI.RawUI.ForegroundColor = 'DarkGreen'
             Clear-Host
             Function Type-Dynamic([Int32]$DelayMin, [Int32]$DelayMax, [String]$String) {
                 For ($i = 0; $i -lt $String.Length; $i++) {
@@ -1381,35 +1386,41 @@ BugCheckParameter4: $bugCheckParam4
                 Write-Host
             }
             
-            Write-Host "Loading..."
-            Type-Dynamic 1 2 'RRRRRRRRRRRRRRRRR   TTTTTTTTTTTTTTTTTTTTTTTFFFFFFFFFFFFFFFFFFFFFFMMMMMMMM               MMMMMMMM'
-            Type-Dynamic 1 2 'R::::::::::::::::R  T:::::::::::::::::::::TF::::::::::::::::::::FM:::::::M             M:::::::M'
-            Type-Dynamic 1 2 'R::::::RRRRRR:::::R T:::::::::::::::::::::TF::::::::::::::::::::FM::::::::M           M::::::::M'
-            Type-Dynamic 1 2 'RR:::::R     R:::::RT:::::TT:::::::TT:::::TFF::::::FFFFFFFFF::::FM:::::::::M         M:::::::::M'
-            Type-Dynamic 1 2 '  R::::R     R:::::RTTTTTT  T:::::T  TTTTTT  F:::::F       FFFFFFM::::::::::M       M::::::::::M'
-            Type-Dynamic 1 2 '  R::::R     R:::::R        T:::::T          F:::::F             M:::::::::::M     M:::::::::::M'
-            Type-Dynamic 1 2 '  R::::RRRRRR:::::R         T:::::T          F::::::FFFFFFFFFF   M:::::::M::::M   M::::M:::::::M'
-            Type-Dynamic 1 2 '  R:::::::::::::RR          T:::::T          F:::::::::::::::F   M::::::M M::::M M::::M M::::::M'
-            Type-Dynamic 1 2 '  R::::RRRRRR:::::R         T:::::T          F:::::::::::::::F   M::::::M  M::::M::::M  M::::::M'
-            Type-Dynamic 1 2 '  R::::R     R:::::R        T:::::T          F::::::FFFFFFFFFF   M::::::M   M:::::::M   M::::::M'
-            Type-Dynamic 1 2 '  R::::R     R:::::R        T:::::T          F:::::F             M::::::M    M:::::M    M::::::M'
-            Type-Dynamic 1 2 '  R::::R     R:::::R        T:::::T          F:::::F             M::::::M     MMMMM     M::::::M'
-            Type-Dynamic 1 2 'RR:::::R     R:::::R      TT:::::::TT      FF:::::::FF           M::::::M               M::::::M'
-            Type-Dynamic 1 2 'R::::::R     R:::::R      T:::::::::T      F::::::::FF           M::::::M               M::::::M'
-            Type-Dynamic 1 2 'R::::::R     R:::::R      T:::::::::T      F::::::::FF           M::::::M               M::::::M'
-            Type-Dynamic 1 2 'RRRRRRRR     RRRRRRR      TTTTTTTTTTT      FFFFFFFFFFF           MMMMMMMM               #WIDICK#'
+            Write-Host "Loading..." -ForegroundColor Yellow
+            Type-Dynamic 1 2   'RRRRRRRRRRRRRRRRR   TTTTTTTTTTTTTTTTTTTTTTTFFFFFFFFFFFFFFFFFFFFFFMMMMMMMM               MMMMMMMM'
+            Type-Dynamic 1 2   'R::::::::::::::::R  T:::::::::::::::::::::TF::::::::::::::::::::FM:::::::M             M:::::::M'
+            Type-Dynamic 1 2   'R::::::RRRRRR:::::R T:::::::::::::::::::::TF::::::::::::::::::::FM::::::::M           M::::::::M'
+            Type-Dynamic 1 2   'RR:::::R     R:::::RT:::::TT:::::::TT:::::TFF::::::FFFFFFFFF::::FM:::::::::M         M:::::::::M'
+            Type-Dynamic 1 2   '  R::::R     R:::::RTTTTTT  T:::::T  TTTTTT  F:::::F       FFFFFFM::::::::::M       M::::::::::M'
+            Type-Dynamic 1 2   '  R::::R     R:::::R        T:::::T          F:::::F             M:::::::::::M     M:::::::::::M'
+            Type-Dynamic 1 2   '  R::::RRRRRR:::::R         T:::::T          F::::::FFFFFFFFFF   M:::::::M::::M   M::::M:::::::M'
+            Type-Dynamic 1 2   '  R:::::::::::::RR          T:::::T          F:::::::::::::::F   M::::::M M::::M M::::M M::::::M'
+            Type-Dynamic 1 2   '  R::::RRRRRR:::::R         T:::::T          F:::::::::::::::F   M::::::M  M::::M::::M  M::::::M'
+            Type-Dynamic 1 2   '  R::::R     R:::::R        T:::::T          F::::::FFFFFFFFFF   M::::::M   M:::::::M   M::::::M'
+            Type-Dynamic 1 2   '  R::::R     R:::::R        T:::::T          F:::::F             M::::::M    M:::::M    M::::::M'
+            Type-Dynamic 1 2   '  R::::R     R:::::R        T:::::T          F:::::F             M::::::M     MMMMM     M::::::M'
+            Type-Dynamic 1 2   'RR:::::R     R:::::R      TT:::::::TT      FF:::::::FF           M::::::M               M::::::M'
+            Type-Dynamic 1 2   'R::::::R     R:::::R      T:::::::::T      F::::::::FF           M::::::M               M::::::M'
+            Type-Dynamic 1 2   'R::::::R     R:::::R      T:::::::::T      F::::::::FF           M::::::M               M::::::M'
+            Type-Dynamic 1 2   'RRRRRRRR     RRRRRRR      TTTTTTTTTTT      FFFFFFFFFFF           MMMMMMMM               #WIDICK#'
                                                                                                             
             
             Type-Dynamic 1 5 "Made you wait"
+Write-Host "
+RTFM is a modular PowerShell script designed for rapid computer diagnostics and information gathering. 
+It encapsulates and relies upon a curated selection of third-party tools within a menu-driven interface. 
+I'm using AI capabilities to accelerate RTFM's development with rapid error checking and I invite collaboration.
+"  -ForegroundColor Yellow
             
             # https://www.patorjk.com/ For the RTFM Logo
-            # https://github.com/urbanware-org/typefx
+            # https://github.com/urbanware-org/typefx - For the code to make code type like a typewriter
             # MIT License
             #Copyright © 2018, 2019 by Ralf Kilian
             #Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
             #The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
             #THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-            Read Host
+            
+            Read-Host
         }
         'q' { exit }
         default { Write-Host "Invalid selection. Please choose again." }

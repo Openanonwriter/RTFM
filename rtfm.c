@@ -36,8 +36,9 @@ char *get_exe_directory() {
         *last_backslash = '\0'; 
     }
 
+    // system("pause"); // Windows-specific command
     return buffer;
-    system("pause"); // Windows-specific command
+   
 }
 
 int main() {
@@ -54,15 +55,18 @@ int main() {
     if (ps_script_path == NULL) {
         fprintf(stderr, "Error: Memory allocation failed.\n");
         free(exe_directory);
+        system("pause");
         return 1; 
     }
     snprintf(ps_script_path, ps_script_path_len, "%s\\%s", exe_directory, script_name); 
 
     // Check if the script exists
     if (access(ps_script_path, 0) != 0) { 
+        fprintf(stderr, "Young Padawan, you did not RTFM, I see hummm.\n");
         fprintf(stderr, "Error: RTFM.ps1 not found in the same directory.\n");
         free(exe_directory); 
         free(ps_script_path); 
+        system("pause");
         return 1; 
     }
 
@@ -82,6 +86,7 @@ int main() {
         fprintf(stderr, "Error: Failed to create process.\n");
         free(exe_directory); 
         free(ps_script_path); 
+        system("pause");
         return 1;
     }
 
