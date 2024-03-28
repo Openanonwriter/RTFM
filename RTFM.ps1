@@ -1107,53 +1107,58 @@ while ($true) {
 
         }
         '6' {
+            Write-Host "Checking if AppInstaller/Winget is Installed"
+
+            # Use a simpler and more reliable check for App Installer
+            if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+                Write-Host "AppInstaller/Winget is not installed, starting installation now"
+            Write-Information "Downloading WinGet and its dependencies..."
+            Write-Host "Installing... Please wait"
+            Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
+            Invoke-WebRequest -Uri https://aka.ms/Microsoft.VCLibs.x64.14.00.Desktop.appx -OutFile Microsoft.VCLibs.x64.14.00.Desktop.appx
+            Invoke-WebRequest -Uri https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx -OutFile Microsoft.UI.Xaml.2.8.x64.appx
+            Add-AppxPackage Microsoft.VCLibs.x64.14.00.Desktop.appx
+            Add-AppxPackage Microsoft.UI.Xaml.2.8.x64.appx
+            Add-AppxPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
+            
+                # Brief pause to ensure winget is ready 
+                Start-Sleep -Seconds 2  
+            } else {
+                Write-Host "AppInstaller/Winget is Installed"
+                Read-Host
+            }
+            
+            # Updated list of programs (you can customize this)
             $defaultinstalltable = @(
                 "Malwarebytes.Malwarebytes",
                 "Adobe.Acrobat.Reader.64-bit",
                 "Google.Chrome",
                 "AnyDeskSoftwareGmbH.AnyDesk"
             )
-            function winget.list.installed($appId) {
-                $installedApps = winget list
-                return $installedApps -match $appId
-            }
-        
+            
             # Install or update an application
-            function installOrUpdateApp($appId) {
-                if (winget.list.installed $appId) {
-                    Write-Host "Updating $appId..."
-                    winget upgrade --id $appId
-                }
-                else {
-                    Write-Host "Installing $appId..."
-                    winget install --exact --id $appId
+            function InstallOrUpdateApp($appId) {
+                if (Get-Command winget -ErrorAction SilentlyContinue) { 
+                    if (winget show $appId -ErrorAction SilentlyContinue) { 
+                        Write-Host "Updating $appId..."
+                        winget upgrade --id $appId
+                    } else {
+                        Write-Host "Installing $appId..."
+                        winget install --exact --id $appId
+                    }
+                } else {
+                    Write-Error "winget command not found after installation. Installation may have failed."
+                    Read-Host
                 }
             }
-            Write-Host "Checking if AppInstaller is Installed"
-            if ((Get-AppPackage -AllUsers).Name -like "*DesktopAppInstaller_8wekyb3d8bbwe*") {
-                Write-Host "Is not installed, installing now"
-                $progressPreference = 'silentlyContinue'
-                Write-Information "Downloading WinGet and its dependencies..."
-                Invoke-WebRequest -Uri https://aka.ms/getwinget -OutFile Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
-                Write-Host "Is not installed, installing now"
-                Add-AppxPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle
-                echo y | winget list
-                foreach ($app in $defaultinstalltable) {
-                    installOrUpdateApp $app
-                }
-                Write-Host "Installed"
+            
+            # Check and install/update applications
+            foreach ($app in $defaultinstalltable) {
+                InstallOrUpdateApp $app
             }
-            else {
-                # Check and install/update applications
-                foreach ($app in $defaultinstalltable) {
-                    installOrUpdateApp $app
-                }
-                Write-Host "Apps should be installed and uptodate, check above for errors."
-        
-                Read-Host
-                # End of Menu 6
-            }
-        } 
+                        Write-Host "Apps should be installed and up-to-date, check above for errors."
+                        Read-Host
+                    }            
 
         'repair' {
             Clear-Host
