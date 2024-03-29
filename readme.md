@@ -42,6 +42,9 @@ Checks BitLocker encryption status: It lets you know if BitLocker, a drive encry
 Important Notes:<br>
 If you see a BitLocker recovery key listed, make sure to store it very securely. This key is the only way to recover data if you ever lose access to your encrypted drive.<br>
 
+> [!WARNING]  
+> "Do not use option '6' until fixed." 
+
 
 ## NDT (NETWORK DIAGNOSTIC TOOL)
 ### (EIP) External IPv4
