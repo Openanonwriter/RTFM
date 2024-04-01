@@ -43,7 +43,7 @@ Important Notes:<br>
 If you see a BitLocker recovery key listed, make sure to store it very securely. This key is the only way to recover data if you ever lose access to your encrypted drive.<br>
 
 > [!WARNING]  
-> "Do not use option '6' until fixed." 
+> "Do not use "install_anyDesk_malwareBytes_Chrome_adobeReader" under aditional scripts until fixed." 
 
 
 ## NDT (NETWORK DIAGNOSTIC TOOL)
@@ -68,14 +68,11 @@ Tries detecting the presence Third-Party installed remote access programs like A
 VPN Indicators: Scans for traces of VPN configurations and programs.<br>
 BOTH Remote Software and VPN just use recursive funtions to check names in the registry, running processes and temp files, can be wildly inacurate, but handy for quick checks. <br>
 
-### iperf3
+### iperf3 (Moved to external Scripts)
 This is the command line version of iperf3, with a quick custom menu making it easy to set up iperf3 in seconds for a custom TCP protnumber. 
 
-### Nmap 
+### Nmap (Moved to external Scripts)
 Comand line version of nmap. With depenency checking if npcap.exe is installed. 
-
-### TNC
-A random placebolder of giberish until i add in other diagnostic tools, why dont i remove it, because im to busy adding and fixing other things. 
 
 ## (Hardware) Info
 #### Motherboard: 
@@ -89,9 +86,10 @@ Bank Label, Manufacturer, Part Number, Speed, Memory Type
 #### CPU:
 Displays the processor's name, socket designation, number of physical sockets, total cores, and the number of logical processors (threads).
 Reports the maximum clock speed in MHz.
-
-#### Storage Health (CrystalDiskInfo Integration)
-
+#### 12V,5V,3.3V PSU Voltage via CPU-Z
+This works if CPU-Z is provided in tools. If not the script with just bypass it. 
+Note a lot of older boards do not give Power Info. 
+#### Storage Health (CrystalDiskInfo) or Windows SmartData if crystaldisk is unavalible. 
 Runs CrystalDiskInfo: Executes the CrystalDiskInfo utility to retrieve S.M.A.R.T. (Self-Monitoring, Analysis, and Reporting Technology) data from your storage drives.
 Analyzes S.M.A.R.T Data:
 Parses the CrystalDiskInfo output file, extracting health status, percentages, and relevant S.M.A.R.T attributes for each drive.

@@ -9,5 +9,5 @@ Tools/SysinternalsSuite/
 Tools/Networking/
 Tools/Networking/nmap-7.92
 .vscode/launch.json
- .vscode/
+.vscode/
 .vscode/tasks.json
