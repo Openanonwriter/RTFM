@@ -218,7 +218,7 @@ Registries Checked
 
 Grab your self a flash drive 32GB flashdrive or larger as every tech does, but only 1gb needed atm for RTFM. 
 
-1. Download and extract archive from https://git.artificialfreedom.com/tony/RTFM/archive/main.zip
+1. Download and extract archive. 
 
 2. Move the downlaoder.ps1 scrilpt to your flashdrive, Run the downloader.ps1 script and let it do its job or if your a business create a folder at the Called Tools and move to step 3.  
 (Home users only, do not use if your a business! Licnesing for most of these programs are for home users only) Please adhere to licnesing.  
