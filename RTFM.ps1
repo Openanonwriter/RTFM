@@ -1416,8 +1416,8 @@ function MainMenu {
         if ($bitlockeroutput -match $pattern) {
             Write-host "BitLocker: " -NoNewline
             Write-host "Enabled" -ForegroundColor Red
-            Write-host "Recovery Key:" -NoNewline
-            write-host $bitlockercode -BackgroundColor Black -ForegroundColor Red
+            #Write-host "Recovery Key:" -NoNewline
+            #write-host $bitlockercode -BackgroundColor Black -ForegroundColor Red
         }
         else {
             Write-host "Recovery Key not found in the output" # More informative message
