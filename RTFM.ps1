@@ -1438,8 +1438,12 @@ function MainMenu {
                            Description = "View Basic Network infomation, external IP" }
         [PSCustomObject]@{ Selector = 'o';   Name = "Additional Scripts"; 
                            Description = "Run Additional Powershell Scripts placed under in /Tools/Scripts" }
+        [PSCustomObject]@{ Selector = 'g';   Name = "All Settings"; 
+                           Description = "This is an event variable known as God Mode" }
         [PSCustomObject]@{ Selector = 'a';   Name = "About"; 
                            Description = "Shows information about this program" }
+        [PSCustomObject]@{ Selector = 'u';   Name = "Reboot to UEFI/BIOS"; 
+                           Description = "Directly Reboot to UEFI/BIOS with out having to hit F12 or ESC" }
         [PSCustomObject]@{ Selector = 'q';     Name = "Quit"; Description = " " }
     )
 
@@ -1481,6 +1485,12 @@ while ($true) {
         }
         'o' {
             OtherScripts
+        }
+        'g'{
+            Start-Process "shell:::{ED7BA470-8E54-465E-825C-99712043E01C}" #GodMode
+        }
+        'u'{
+            shutdown /r /fw /t 10 /c "Reboot to UEFI/BIOS initiated via RTFM"
         }
         'q' {
             exit
