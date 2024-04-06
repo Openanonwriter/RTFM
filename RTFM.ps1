@@ -873,6 +873,33 @@ function networkdiagnostictool {while ($true) {
         param($Message)
         Write-Host ("{0}{1}" -f (' ' * (([Math]::Max(0, $Host.UI.RawUI.BufferSize.Width / 2) - [Math]::Floor($Message.Length / 2)))), $Message) 
     }
+    function Search-ItemPathByName {
+        param (
+            [Parameter(Mandatory = $true)]
+            [string[]]$ItemNames,
+            [Parameter(Mandatory = $true)]
+            [string]$Path,
+            [Parameter(Mandatory = $false)]
+            [string]$textcolor
+        )
+        
+        # Search for the files and folders recursively and filter based on name
+        $results = Get-ChildItem -Path $Path -Recurse -ErrorAction SilentlyContinue |
+        Where-Object {
+            foreach ($itemName in $ItemNames) {
+                if ($_.Name -eq $itemName -or $_.Name -like "*$itemName*") {
+                    return $true
+                }
+            }
+            return $false
+        }
+    
+        # Output the names and full paths of the found items
+        foreach ($result in $results) {
+            Write-ColoredText "$($result.FullName)" $textcolor
+        }
+    }
+    
     Clear-Host
     Write-HostCenter "=============== Network Diagnostic Tool Menu ===============" 
     $menuTable = @(
@@ -1283,9 +1310,14 @@ while ($true) {
 
     Write-Host ""
     Write-Host "----------END----------"
-    $subChoice = Read-Host "Press (Q) to Quit"
+    #$subChoice = Read-Host 
+    #"Press (Q) to Quit"
 
-    switch ($subChoice) {
+    function Get-KeyPress {
+        $subChoice = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+        return $subChoice.Character 
+    }
+    switch (Get-KeyPress) {
         'q' { return }
         default {
             Write-Host "Invalid selection. Please choose again."
