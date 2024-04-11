@@ -116,8 +116,44 @@ function OtherScripts {
 }
 
 function hardwareinfo{Clear-Host
+    
     Write-Host "Motherboard" -ForegroundColor Magenta
     Get-WmiObject -Class Win32_BaseBoard | Format-Table Manufacturer, Product, SerialNumber, Version -Auto
+    
+     # TPM
+     $tpmToolPath = Get-Command -ErrorAction SilentlyContinue TpmTool.exe
+     if (-not $tpmToolPath) {
+         Write-Host "TpmTool.exe not found. Please ensure it is installed." -ForegroundColor Red
+         exit
+     }
+     
+     # Run TpmTool.exe and get output
+     $tpmInfo = TpmTool.exe getdeviceinformation
+     
+     # Initialize variables
+     $tpmPresent = $false
+     $tpmVersion = ""
+     
+     # Process each line of the output, checking for errors 
+     foreach ($line in $tpmInfo) {
+         if ($line -eq "Failed to get information") {
+             Write-Error $line  # Print error message in red 
+         } elseif ($line -match '^\-TPM Present:\s+(.*)') {
+             $tpmPresent = $matches[1] -eq 'True'
+         } elseif ($line -match '^\-TPM Version:\s+(.*)') {
+             $tpmVersion = $matches[1]
+         }
+     }
+     
+     # Output result
+     if ($tpmPresent) {
+         Write-Host "TPM Module:" -NoNewline
+         Write-Host "True - Version: $tpmVersion" -ForegroundColor Green
+     } else {
+         Write-Host "TPM Module:" -NoNewline
+         Write-Host "False" -ForegroundColor Red
+     }
+    Write-Host " "
     
     Write-Host "RAM" -ForegroundColor Magenta
     $ramInfo = Get-WmiObject -Class Win32_PhysicalMemory
@@ -904,19 +940,14 @@ function networkdiagnostictool {while ($true) {
     Write-HostCenter "=============== Network Diagnostic Tool Menu ===============" 
     $menuTable = @(
         [PSCustomObject]@{
-            Selector    = 'eip'
+            Selector    = 'e'
             Name        = "External IP"
             Description = "Get External IP info from https://ipinfo.io/ or if blocked uses Amazon"
         }
         [PSCustomObject]@{
-            Selector    = 'info'
+            Selector    = 'i'
             Name        = "Lan and Nic Info"
             Description = "IP Addressing, DNS, MACs, ROUTING, ECT"
-        }
-        [PSCustomObject]@{
-            Selector    = "tnc"
-            Name        = "Hello"
-            Description = "Empty Space At the moment!"
         }
         [PSCustomObject]@{
             Selector    = "q"
@@ -926,10 +957,10 @@ function networkdiagnostictool {while ($true) {
     )
     # Display the table
     $menuTable | Format-Table -AutoSize 
-    $choice = Read-Host "Enter your choice" 
-    switch ($choice) {
-        'info' { Show-infoMenu }
-        'eip' { while ($true) {
+    $choice = $host.UI.RawUI.ReadKey('IncludeKeyDown').Character.ToString().ToLower() 
+        switch ($choice) {
+        'i' { Show-infoMenu }
+        'e' { while ($true) {
             Clear-Host
             Write-HostCenter "=============== External IP TOOL ===============" 
             # External IP
@@ -957,6 +988,7 @@ function networkdiagnostictool {while ($true) {
                 }
             }
         Read-Host
+        break
         } 
     }
         'q' { Show-Menu }
@@ -990,46 +1022,87 @@ while ($true) {
         Write-Host
     }
 
-    Write-Host "Wireless Info" -ForegroundColor Magenta 
+    $Adapters = Get-NetAdapter
 
-    netsh wlan show profiles
-    netsh wlan show wlanreport
+    # Filter for wireless adapters
+    $WirelessAdapter = $Adapters | Where-Object {$_.PhysicalMediaType -eq "Native 802.11"}
+    Write-Host "Wireless Info" -ForegroundColor Magenta
+    # Check if a wireless adapter was found 
+    if ($WirelessAdapter) {
+        Write-Output "Wireless card installed"
+        netsh wlan show profiles
+        netsh wlan show wlanreport
+    } else {
+        Write-Output "No Wireless card installed"
+    }
+    Write-Host " "
+    # Check IIS
+    function Check-IISStatus-Service {
+        Write-Host "IIS Server (W3SVC): " -NoNewline
+        if (Get-Service W3SVC -ErrorAction SilentlyContinue) {
+            if ((Get-Service W3SVC).Status -eq 'Running') {
+                Write-Host "Installed and Running" -ForegroundColor Red 
+            } else {
+                Write-Host "Installed" -ForegroundColor Red
+            }
+        } else {
+            Write-Host "Not Installed" -ForegroundColor Green
+        }
+    }
+    Check-IISStatus-Service  
+    # Check FTP
+    function Check-FTPServer-Service {
+        Write-Host "FTP Server (FTPSVC): " -NoNewLine
+        if (Get-Service -Name "FTPSVC" -ErrorAction SilentlyContinue) {
+            $serviceStatus = (Get-Service -Name "FTPSVC").Status 
+            if ($serviceStatus -eq "Running") {
+                Write-Host "Installed and Running" -ForegroundColor Red
+            } else {
+                Write-Host "Installed" -ForegroundColor Yellow 
+            }
+        } else {
+            Write-Host "Not Installed" -ForegroundColor Green
+        }
+    }
+    Check-FTPServer-Service
+    
 
     Write-Host "Remote Accesss" -ForegroundColor Magenta
     # WinRM
     $winrmStatus = Get-WmiObject -Class Win32_Service -Filter "Name = 'winrm'"
+    Write-Host "WinRM: " -NoNewline
     if ($winrmStatus.State -eq "Running") {
-        Write-Host "WinRM: Enabled"
+        Write-Host "Enabled" -ForegroundColor Red
     }
     else {
-        Write-Host "WinRM: Disabled"
+        Write-Host "Disabled" -ForegroundColor Green
     }
     #check for SSH Server
     $sshServerInstalled = Get-WindowsCapability -Online | Where-Object Name -like 'OpenSSH.Server*'
+    Write-Host "OpenSSH SSH Server: " -NoNewline
     if ($sshServerInstalled.State -eq 'Installed') {
         # Check if OpenSSH SSH Server service is running
         $sshServiceStatus = Get-Service -Name sshd -ErrorAction SilentlyContinue
         if ($sshServiceStatus.Status -eq 'Running') {
-            Write-Host "OpenSSH SSH Server: " -NoNewline
-            Write-Host "RUNNING" -ForegroundColor Red
+            Write-Host "Installed and Running" -ForegroundColor Red
         }
         else {
-            Write-Host "OpenSSH SSH Server: " -NoNewline
-            Write-Host "INSTALLED, NOT RUNNING." -ForegroundColor Yellow
+            Write-Host "Installed" -ForegroundColor Yellow
         }
     }
     else {
-        Write-Host "OpenSSH Server: NOT INSTALLED."
+        Write-Host "Not Installed" -ForegroundColor Green
     }
     
     # Windows Remote Desktop
     $TermServ = Get-WmiObject -Class "Win32_TerminalServiceSetting" -Namespace root\CIMv2\TerminalServices
+    Write-Host "Windows Remote Desktop: " -NoNewline
     $RDPStatus = $TermServ.GetAllowTSConnections
     if ($RDPStatus.ReturnValue -eq 0) {
-        Write-Host "Windows Remote Desktop: Enabled."
+        Write-Host "Enabled" -ForegroundColor Red
     }
     else {
-        Write-Host "Windows Remote Desktop: Disabled."
+        Write-Host "Disabled" -ForegroundColor Green
     }
 
     #Check if any remote desktop apps are installed, in the registry
@@ -1310,8 +1383,8 @@ while ($true) {
 
     Write-Host ""
     Write-Host "----------END----------"
-    #$subChoice = Read-Host 
-    #"Press (Q) to Quit"
+    $subChoice = Read-Host 
+    "Press (Q) to Quit"
 
     function Get-KeyPress {
         $subChoice = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
@@ -1322,7 +1395,9 @@ while ($true) {
         default {
             Write-Host "Invalid selection. Please choose again."
             Read-Host
-}}}}
+    }
+}
+}}
 
 function about{
     $Host.UI.RawUI.BackgroundColor = 'black'
@@ -1459,6 +1534,39 @@ function MainMenu {
         Write-host "BitLocker: " -NoNewline
         Write-host "Disabled" -ForegroundColor Green 
     }   
+    # TPM
+    $tpmToolPath = Get-Command -ErrorAction SilentlyContinue TpmTool.exe
+    if (-not $tpmToolPath) {
+        Write-Host "TpmTool.exe not found. Please ensure it is installed." -ForegroundColor Red
+        exit
+    }
+    
+    # Run TpmTool.exe and get output
+    $tpmInfo = TpmTool.exe getdeviceinformation
+    
+    # Initialize variables
+    $tpmPresent = $false
+    $tpmVersion = ""
+    
+    # Process each line of the output, checking for errors 
+    foreach ($line in $tpmInfo) {
+        if ($line -eq "Failed to get information") {
+            Write-Error $line  # Print error message in red 
+        } elseif ($line -match '^\-TPM Present:\s+(.*)') {
+            $tpmPresent = $matches[1] -eq 'True'
+        } elseif ($line -match '^\-TPM Version:\s+(.*)') {
+            $tpmVersion = $matches[1]
+        }
+    }
+    
+    # Output result
+    if ($tpmPresent) {
+        Write-Host "TPM Module:" -NoNewline
+        Write-Host "True - Version: $tpmVersion" -ForegroundColor Green
+    } else {
+        Write-Host "TPM Module:" -NoNewline
+        Write-Host "False" -ForegroundColor Red
+    }
 
     # Your menu table definition
     $menuTable = @(
